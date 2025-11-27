@@ -1,6 +1,6 @@
 package at.tgm.server;
 
-import at.tgm.client.AnmeldeController;
+import at.tgm.network.packets.NutzerStatus;
 import at.tgm.objects.Nutzer;
 
 public class Server {
@@ -12,12 +12,25 @@ public class Server {
 
         nutzers =  new Nutzer[1];
 
-        addNutzer( new Nutzer("Felix Riemer", "password"));
-        addNutzer( new Nutzer("n1", "n1"));
-        addNutzer( new Nutzer("n2", "n2"));
-        addNutzer( new Nutzer("n3", "n3"));
+        Nutzer felix = new Nutzer("riemer", "123");
 
+        felix.setFirstName("Felix");
+        felix.setLastName("Riemer");
+        felix.setAge(17);
 
+// Darstellung
+        felix.setDisplayName("Felix R.");
+        felix.setBeschreibung("Tech enthusiast, Minecraft dev, Java enjoyer.");
+        felix.setStatus(NutzerStatus.ONLINE);
+
+// Kontakt
+        felix.setEmail("felix.riemer@example.com");
+        felix.setPhoneNumber("+43 660 1234567");
+
+// Profilbild
+        felix.setProfilePictureUrl("https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Minecraft-creeper-face.jpg/500px-Minecraft-creeper-face.jpg");
+
+        addNutzer(felix);
         ServerNetworkController.start(port);
     }
     public static Nutzer findNutzerByUsername(String username){

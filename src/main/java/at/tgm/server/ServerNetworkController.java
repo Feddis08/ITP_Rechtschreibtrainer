@@ -1,7 +1,6 @@
 package at.tgm.server;
 
-import at.tgm.network.NetworkSystem;
-import at.tgm.objects.Nutzer;
+import at.tgm.network.core.NetworkSystem;
 
 import java.io.*;
 import java.net.ServerSocket;

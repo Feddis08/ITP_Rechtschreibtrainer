@@ -1,4 +1,4 @@
-package at.tgm.network;
+package at.tgm.network.core;
 
 import java.util.HashMap;
 import java.util.Map;

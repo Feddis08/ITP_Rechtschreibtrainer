@@ -1,10 +1,13 @@
-package at.tgm.network;
+package at.tgm.network.packets;
+
+import at.tgm.network.core.NetworkContext;
+import at.tgm.network.core.Packet;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public class C2SHelloPacket implements Packet{
+public class C2SHelloPacket implements Packet {
 
     private String systemInfo;
 

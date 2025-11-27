@@ -1,4 +1,4 @@
-package at.tgm.network;
+package at.tgm.network.core;
 
 import java.io.*;
 import java.net.Socket;
@@ -8,11 +8,14 @@ public class NetworkChannel {
     private final Socket socket;
     private final DataOutputStream out;
     private final DataInputStream in;
+    private final NetworkContext context;
 
-    public NetworkChannel(Socket socket) throws IOException {
+
+    public NetworkChannel(Socket socket, NetworkContext context) throws IOException {
         this.socket = socket;
         this.out = new DataOutputStream(socket.getOutputStream());
         this.in = new DataInputStream(socket.getInputStream());
+        this.context = context;
 
         System.out.println("New channel open.");
         listenAsync();
@@ -32,6 +35,7 @@ public class NetworkChannel {
         out.writeInt(data.length);
         out.write(data);
         out.flush();
+        System.out.println("Sent new packet: " + id);
     }
 
     private void listenAsync() {
@@ -49,7 +53,7 @@ public class NetworkChannel {
                     Packet packet = PacketRegistry.getPacketClass(id).getDeclaredConstructor().newInstance();
                     packet.decode(new DataInputStream(new ByteArrayInputStream(data)));
 
-                    packet.handle(new NetworkContext(socket));
+                    packet.handle(context);
                 }
             } catch (Exception e) {
                 System.out.println("Connection closed.");

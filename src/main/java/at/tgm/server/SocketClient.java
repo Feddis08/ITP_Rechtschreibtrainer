@@ -1,28 +1,37 @@
 package at.tgm.server;
 
-import at.tgm.network.NetworkChannel;
+import at.tgm.network.core.NetworkChannel;
+import at.tgm.network.core.NetworkContext;
+import at.tgm.network.core.Packet;
+import at.tgm.objects.Nutzer;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.Socket;
 
-public class SocketClient {
+public class SocketClient extends NetworkContext {
 
-    Socket client;
+    private final NetworkChannel channel;
 
-    NetworkChannel networkChannel;
+    private Nutzer nutzer; // dein User-Objekt
 
-    public SocketClient(Socket client) throws IOException {
-        this.client = client;
-        this.networkChannel = new NetworkChannel(client);
+    public SocketClient(Socket socket) throws IOException {
+        super(socket);
+        this.channel = new NetworkChannel(socket, this);
     }
 
-    public Socket getClient() {
-        return client;
+    public Nutzer getNutzer() {
+        return nutzer;
     }
 
+    public void setNutzer(Nutzer nutzer) {
+        this.nutzer = nutzer;
+    }
 
+    public NetworkChannel getChannel() {
+        return channel;
+    }
 
+    public void send(Packet packet) throws IOException {
+        channel.send(packet);
+    }
 }

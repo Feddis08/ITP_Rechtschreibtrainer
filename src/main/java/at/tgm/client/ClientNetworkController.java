@@ -1,15 +1,15 @@
 package at.tgm.client;
 
-import at.tgm.network.NetworkChannel;
-import at.tgm.network.NetworkSystem;
+import at.tgm.network.core.NetworkChannel;
+import at.tgm.network.core.NetworkSystem;
+import at.tgm.server.SocketClient;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Scanner;
 
 public class ClientNetworkController {
 
-    public static NetworkChannel networkChannel;
+    public static SocketClient socketClient;
     public static void connect() {
         NetworkSystem.init();
         String host = "localhost";
@@ -18,7 +18,7 @@ public class ClientNetworkController {
         try {
             Socket socket = new Socket(host, port);
             System.out.println("[CLIENT] Connected to server!");
-            networkChannel = new NetworkChannel(socket);
+            socketClient = new SocketClient(socket);
 
         } catch (IOException e) {
             throw new RuntimeException(e);

@@ -1,4 +1,4 @@
-package at.tgm.client;
+package at.tgm.client.anmeldung;
 
 import javax.swing.*;
 import java.awt.*;
@@ -40,7 +40,9 @@ public class AnmeldeFrame extends JFrame {
         buttonPanel.add(loginButton);
 
         add(buttonPanel, BorderLayout.SOUTH);
+        this.setResizable(false);
     }
+
 
     public String getUsername(){
         return usernameField.getText();
