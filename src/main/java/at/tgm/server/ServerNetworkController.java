@@ -1,6 +1,8 @@
 package at.tgm.server;
 
 import at.tgm.network.core.NetworkSystem;
+import at.tgm.objects.Distro;
+import at.tgm.objects.SocketClient;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -23,13 +25,28 @@ public class ServerNetworkController {
                 Socket client = serverSocket.accept();
                 System.out.println("[SERVER] Client connected: " + client.getInetAddress());
 
-                addClient(new SocketClient(client));
+                addClient(new SocketClient(client, Distro.SERVER));
 
 
             }
 
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+    public static void removeClient(SocketClient client){
+
+        System.out.println("removing old client");
+
+        int i = 0;
+        for (SocketClient c : clients){
+            if (c.getSocket().getRemoteSocketAddress()
+                    .equals(client.getSocket().getRemoteSocketAddress())) {
+
+                clients[i] = null;
+                return;
+            }
+            i ++;
         }
     }
 

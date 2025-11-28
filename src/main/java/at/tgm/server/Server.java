@@ -1,7 +1,8 @@
 package at.tgm.server;
 
-import at.tgm.network.packets.NutzerStatus;
+import at.tgm.objects.NutzerStatus;
 import at.tgm.objects.Nutzer;
+import at.tgm.objects.Schueler;
 
 public class Server {
 
@@ -12,11 +13,12 @@ public class Server {
 
         nutzers =  new Nutzer[1];
 
-        Nutzer felix = new Nutzer("riemer", "123");
+        Schueler felix = new Schueler("riemer", "123");
 
         felix.setFirstName("Felix");
         felix.setLastName("Riemer");
         felix.setAge(17);
+        felix.setSchoolClass("3BHIT");
 
 // Darstellung
         felix.setDisplayName("Felix R.");

@@ -1,8 +1,8 @@
 package at.tgm.client;
 
-import at.tgm.network.core.NetworkChannel;
 import at.tgm.network.core.NetworkSystem;
-import at.tgm.server.SocketClient;
+import at.tgm.objects.Distro;
+import at.tgm.objects.SocketClient;
 
 import java.io.*;
 import java.net.Socket;
@@ -18,7 +18,7 @@ public class ClientNetworkController {
         try {
             Socket socket = new Socket(host, port);
             System.out.println("[CLIENT] Connected to server!");
-            socketClient = new SocketClient(socket);
+            socketClient = new SocketClient(socket, Distro.CLIENT);
 
         } catch (IOException e) {
             throw new RuntimeException(e);

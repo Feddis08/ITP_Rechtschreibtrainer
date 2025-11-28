@@ -1,6 +1,7 @@
 package at.tgm.client;
 
 import at.tgm.client.anmeldung.AnmeldeController;
+import at.tgm.client.profile.ProfileFrame;
 import at.tgm.network.packets.C2SHelloPacket;
 import at.tgm.objects.Nutzer;
 

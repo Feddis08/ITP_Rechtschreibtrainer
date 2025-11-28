@@ -1,7 +1,7 @@
-package at.tgm.client;
+package at.tgm.client.profile;
 
 import at.tgm.objects.Nutzer;
-import at.tgm.network.packets.NutzerStatus;
+import at.tgm.objects.NutzerStatus;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;

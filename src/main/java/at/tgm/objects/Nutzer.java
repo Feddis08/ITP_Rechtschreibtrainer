@@ -1,13 +1,11 @@
 package at.tgm.objects;
 
-import at.tgm.network.packets.NutzerStatus;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.UUID;
 
-public class Nutzer {
+public abstract class Nutzer {
 
     private String phoneNumber;
     private String firstName;
@@ -64,6 +62,10 @@ public class Nutzer {
     // ENCODE METHOD
     // ============================================================
     public void encode(DataOutputStream out, boolean includeSensitive) throws IOException {
+        out.writeUTF(this.getClass().getName());
+
+
+
         out.writeUTF(username);
         out.writeUTF(nullSafe(displayName));
         out.writeUTF(status.name());
@@ -86,6 +88,22 @@ public class Nutzer {
 
     private String nullSafe(String s) {
         return s == null ? "" : s;
+    }
+
+    public static Nutzer decodeNutzer(DataInputStream in, boolean includeSensitive) throws IOException {
+        String className = in.readUTF();
+
+        try {
+            Class<?> cls = Class.forName(className);
+
+            // Den richtigen Konstruktor finden:
+            return (Nutzer) cls
+                    .getConstructor(DataInputStream.class, boolean.class)
+                    .newInstance(in, includeSensitive);
+
+        } catch (Exception e) {
+            throw new IOException("Could not decode Nutzer class " + className, e);
+        }
     }
 
 

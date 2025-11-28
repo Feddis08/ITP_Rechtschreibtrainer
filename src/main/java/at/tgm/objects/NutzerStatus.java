@@ -1,4 +1,4 @@
-package at.tgm.network.packets;
+package at.tgm.objects;
 
 public enum NutzerStatus {
     ONLINE,

@@ -1,4 +1,4 @@
-package at.tgm.server;
+package at.tgm.objects;
 
 import at.tgm.network.core.NetworkChannel;
 import at.tgm.network.core.NetworkContext;
@@ -12,11 +12,19 @@ public class SocketClient extends NetworkContext {
 
     private final NetworkChannel channel;
 
-    private Nutzer nutzer; // dein User-Objekt
+    private Nutzer nutzer;//user objekt
 
-    public SocketClient(Socket socket) throws IOException {
+    private Distro distro;
+
+    public SocketClient(Socket socket, Distro distro) throws IOException {
         super(socket);
+
+        this.distro = distro;
         this.channel = new NetworkChannel(socket, this);
+    }
+
+    public Distro getDistro() {
+        return distro;
     }
 
     public Nutzer getNutzer() {

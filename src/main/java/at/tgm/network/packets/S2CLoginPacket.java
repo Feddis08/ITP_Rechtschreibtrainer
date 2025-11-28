@@ -29,7 +29,7 @@ public class S2CLoginPacket implements Packet {
 
     @Override
     public void decode(DataInputStream in) throws IOException {
-        this.n = new Nutzer(in, false);
+        this.n = Nutzer.decodeNutzer(in, false);
     }
 
     @Override
