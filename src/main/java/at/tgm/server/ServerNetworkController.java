@@ -34,21 +34,28 @@ public class ServerNetworkController {
             throw new RuntimeException(e);
         }
     }
-    public static void removeClient(SocketClient client){
+    public static void removeClient(SocketClient client) {
 
         System.out.println("removing old client");
 
-        int i = 0;
-        for (SocketClient c : clients){
+        for (int i = 0; i < clients.length; i++) {
+            SocketClient c = clients[i];
+
+            if (c == null) continue;
+
             if (c.getSocket().getRemoteSocketAddress()
                     .equals(client.getSocket().getRemoteSocketAddress())) {
+
+                try {
+                    c.getSocket().close();  // reicht völlig!
+                } catch (IOException ignored) {}
 
                 clients[i] = null;
                 return;
             }
-            i ++;
         }
     }
+
 
     public static void addClient(SocketClient client){
 

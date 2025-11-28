@@ -5,7 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.UUID;
 
-public abstract class Nutzer {
+public abstract class Nutzer extends SendableObject{
 
     private String phoneNumber;
     private String firstName;
@@ -25,6 +25,13 @@ public abstract class Nutzer {
     private String profilePictureUrl;
     private long lastLoginTimestamp;
 
+    public Nutzer() {
+        this.username = "";
+        this.password = "";
+        this.createdAt = System.currentTimeMillis();
+        this.uuid = UUID.randomUUID().toString();
+        this.status = NutzerStatus.OFFLINE;
+    }
     public Nutzer (String username, String password){
         this.username = username;
         this.password = password;
@@ -32,80 +39,6 @@ public abstract class Nutzer {
         this.status = NutzerStatus.OFFLINE;
         this.uuid = String.valueOf(UUID.randomUUID());
     }
-    // ============================================================
-    // DECODING CONSTRUCTOR (Client bekommt diesen)
-    // ============================================================
-    public Nutzer(DataInputStream in, boolean includeSensitive) throws IOException {
-        this.username = in.readUTF();
-        this.displayName = in.readUTF();
-        this.status = NutzerStatus.valueOf(in.readUTF());
-        this.uuid = in.readUTF();
-        this.createdAt = in.readLong();
-        this.lastLoginTimestamp = in.readLong();
-
-        this.email = in.readUTF();
-        this.profilePictureUrl = in.readUTF();
-        this.phoneNumber = in.readUTF();
-        this.firstName = in.readUTF();
-        this.lastName = in.readUTF();
-        this.beschreibung = in.readUTF();
-        this.age = in.readInt();
-
-        if (includeSensitive) {
-            this.password = in.readUTF();
-        } else {
-            this.password = null;
-        }
-    }
-
-    // ============================================================
-    // ENCODE METHOD
-    // ============================================================
-    public void encode(DataOutputStream out, boolean includeSensitive) throws IOException {
-        out.writeUTF(this.getClass().getName());
-
-
-
-        out.writeUTF(username);
-        out.writeUTF(nullSafe(displayName));
-        out.writeUTF(status.name());
-        out.writeUTF(uuid);
-        out.writeLong(createdAt);
-        out.writeLong(lastLoginTimestamp);
-
-        out.writeUTF(nullSafe(email));
-        out.writeUTF(nullSafe(profilePictureUrl));
-        out.writeUTF(nullSafe(phoneNumber));
-        out.writeUTF(nullSafe(firstName));
-        out.writeUTF(nullSafe(lastName));
-        out.writeUTF(nullSafe(beschreibung));
-        out.writeInt(age);
-
-        if (includeSensitive) {
-            out.writeUTF(password != null ? password : "");
-        }
-    }
-
-    private String nullSafe(String s) {
-        return s == null ? "" : s;
-    }
-
-    public static Nutzer decodeNutzer(DataInputStream in, boolean includeSensitive) throws IOException {
-        String className = in.readUTF();
-
-        try {
-            Class<?> cls = Class.forName(className);
-
-            // Den richtigen Konstruktor finden:
-            return (Nutzer) cls
-                    .getConstructor(DataInputStream.class, boolean.class)
-                    .newInstance(in, includeSensitive);
-
-        } catch (Exception e) {
-            throw new IOException("Could not decode Nutzer class " + className, e);
-        }
-    }
-
 
 
 

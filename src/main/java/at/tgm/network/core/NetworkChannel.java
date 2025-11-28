@@ -60,13 +60,16 @@ public class NetworkChannel {
                     packet.handle(context);
                 }
             } catch (Exception e) {
-                System.out.println("Connection closed.");
+                //e.printStackTrace();
+                System.out.println(".Connection closed.");
 
                 if (!(context instanceof SocketClient sc))
                     return;
 
-                if (sc.getDistro().equals(Distro.SERVER))
+                if (sc.getDistro().equals(Distro.SERVER)) {
                     ServerNetworkController.removeClient(sc);
+                    return;
+                }
 
             }
         }).start();

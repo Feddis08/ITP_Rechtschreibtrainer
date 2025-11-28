@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
 group 'at.tgm'
@@ -8,11 +9,23 @@ version '1.0-SNAPSHOT'
 repositories {
     mavenCentral()
 }
-
+shadowJar {
+    archiveBaseName.set("itp-app")
+    archiveVersion.set("1.0")
+    archiveClassifier.set("")
+}
 dependencies {
+    implementation 'com.esotericsoftware:kryo:5.5.0'
+
+    // funktionierendes Serializer-Paket
+    implementation 'de.javakaffee:kryo-serializers:0.45'
+
+    implementation 'org.lz4:lz4-java:1.8.0'
+
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 }
+
 
 test {
     useJUnitPlatform()
