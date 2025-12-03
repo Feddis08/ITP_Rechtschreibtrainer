@@ -5,13 +5,23 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="426417ca-f9af-4249-bb16-12cba3f72fe1" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/objects/SendableObject.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/client/quiz/QuizFrame.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/network/packets/C2SPlayQuiz.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/network/packets/S2CPOSTQuiz.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/objects/FachbegriffItem.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/objects/NutzerStats.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/objects/Quiz.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/server/ServerClient.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/client/Client.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/client/Client.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/client/ClientNetworkController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/client/ClientNetworkController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/client/dashboard/DashboardFrame.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/client/dashboard/DashboardFrame.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/network/core/NetworkChannel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/network/core/NetworkChannel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/network/packets/S2CLoginPacket.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/network/packets/S2CLoginPacket.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/objects/Nutzer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/objects/Nutzer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/objects/Schueler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/objects/Schueler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/network/core/NetworkSystem.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/network/core/NetworkSystem.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/network/packets/C2SAuthenticationPacket.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/network/packets/C2SAuthenticationPacket.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/objects/SendableObject.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/objects/SendableObject.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/objects/SocketClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/network/core/SocketClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/objects/SuperUser.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/server/ServerNetworkController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/server/ServerNetworkController.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -79,7 +89,7 @@
       <module name="ITP_Rechtschreibtrainer.main" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="at.tgm.objects.*" />
+          <option name="PATTERN" value="at.tgm.network.core.SocketClient" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>

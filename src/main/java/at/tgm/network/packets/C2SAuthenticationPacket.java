@@ -4,7 +4,7 @@ import at.tgm.network.core.NetworkContext;
 import at.tgm.network.core.Packet;
 import at.tgm.objects.Nutzer;
 import at.tgm.server.Server;
-import at.tgm.objects.SocketClient;
+import at.tgm.network.core.SocketClient;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

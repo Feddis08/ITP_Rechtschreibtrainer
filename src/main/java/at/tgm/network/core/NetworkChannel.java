@@ -1,7 +1,6 @@
 package at.tgm.network.core;
 
 import at.tgm.objects.Distro;
-import at.tgm.objects.SocketClient;
 import at.tgm.server.ServerNetworkController;
 
 import java.io.*;
@@ -60,7 +59,7 @@ public class NetworkChannel {
                     packet.handle(context);
                 }
             } catch (Exception e) {
-                //e.printStackTrace();
+                e.printStackTrace();
                 System.out.println(".Connection closed.");
 
                 if (!(context instanceof SocketClient sc))
@@ -68,7 +67,12 @@ public class NetworkChannel {
 
                 if (sc.getDistro().equals(Distro.SERVER)) {
                     ServerNetworkController.removeClient(sc);
-                    return;
+                }else if(sc.getDistro().equals(Distro.CLIENT)){
+                    try {
+                        sc.getSocket().close();
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
                 }
 
             }

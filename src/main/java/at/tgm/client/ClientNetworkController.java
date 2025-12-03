@@ -2,7 +2,7 @@ package at.tgm.client;
 
 import at.tgm.network.core.NetworkSystem;
 import at.tgm.objects.Distro;
-import at.tgm.objects.SocketClient;
+import at.tgm.network.core.SocketClient;
 
 import java.io.*;
 import java.net.Socket;

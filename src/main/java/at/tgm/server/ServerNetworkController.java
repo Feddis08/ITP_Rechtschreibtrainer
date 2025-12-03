@@ -2,7 +2,7 @@ package at.tgm.server;
 
 import at.tgm.network.core.NetworkSystem;
 import at.tgm.objects.Distro;
-import at.tgm.objects.SocketClient;
+import at.tgm.network.core.SocketClient;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -25,7 +25,7 @@ public class ServerNetworkController {
                 Socket client = serverSocket.accept();
                 System.out.println("[SERVER] Client connected: " + client.getInetAddress());
 
-                addClient(new SocketClient(client, Distro.SERVER));
+                addClient(new ServerClient(client));
 
 
             }
@@ -57,7 +57,7 @@ public class ServerNetworkController {
     }
 
 
-    public static void addClient(SocketClient client){
+    public static void addClient(ServerClient client){
 
             System.out.println("adding new client");
 
@@ -81,5 +81,8 @@ public class ServerNetworkController {
             clientsNeu[i] = client;
             clients = clientsNeu;
     }
+
+
+
 
 }

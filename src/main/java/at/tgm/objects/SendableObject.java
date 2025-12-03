@@ -3,6 +3,7 @@ package at.tgm.objects;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import org.objenesis.strategy.StdInstantiatorStrategy;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -16,9 +17,12 @@ public abstract class SendableObject {
         Kryo k = new Kryo();
         k.setRegistrationRequired(false);
         k.setReferences(true);
+
+        // MAGIC LINE: Erlaubt Klassen ohne No-Args-Konstruktor
+        k.setInstantiatorStrategy(new StdInstantiatorStrategy());
+
         return k;
     }
-
     // ======================================================
     // ENCODE → schreibt sich selbst in einen DataOutputStream
     // ======================================================
