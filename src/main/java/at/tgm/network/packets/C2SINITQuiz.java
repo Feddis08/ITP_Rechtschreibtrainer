@@ -8,9 +8,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public class C2SPlayQuiz implements Packet {
+public class C2SINITQuiz implements Packet {
 
-    public C2SPlayQuiz() {
+    public C2SINITQuiz() {
     }
 
     @Override

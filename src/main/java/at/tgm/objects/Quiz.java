@@ -7,11 +7,30 @@ public class Quiz extends SendableObject{
     private long timeStarted;
     private long timeEnded;
 
+    private int points;
+    private int maxPoints;
+
     public Quiz(int size, long timeStarted){
         items = new FachbegriffItem[size];
         this.timeStarted = timeStarted;
         getRandomItems(items);
 
+    }
+
+    public int getPoints() {
+        return points;
+    }
+
+    public void setPoints(int points) {
+        this.points = points;
+    }
+
+    public int getMaxPoints() {
+        return maxPoints;
+    }
+
+    public void setMaxPoints(int maxPoints) {
+        this.maxPoints = maxPoints;
     }
 
     public FachbegriffItem[] getUserItems() {

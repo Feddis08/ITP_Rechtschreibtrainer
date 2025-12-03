@@ -9,6 +9,8 @@ public class Schueler extends Nutzer{
     private String schoolClass;
 
 
+    private Quiz quiz;
+    private Quiz[] quizzes;
 
     public Schueler() {
         super();
@@ -23,5 +25,21 @@ public class Schueler extends Nutzer{
     }
     public void setSchoolClass(String schoolClass) {
         this.schoolClass = schoolClass;
+    }
+
+    public Quiz getQuiz() {
+        return quiz;
+    }
+
+    public void setQuiz(Quiz quiz) {
+        this.quiz = quiz;
+    }
+
+    public Quiz[] getQuizzes() {
+        return quizzes;
+    }
+
+    public void setQuizzes(Quiz[] quizzes) {
+        this.quizzes = quizzes;
     }
 }

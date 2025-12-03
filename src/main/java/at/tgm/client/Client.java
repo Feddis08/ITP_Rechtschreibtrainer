@@ -2,6 +2,7 @@ package at.tgm.client;
 
 import at.tgm.client.anmeldung.AnmeldeController;
 import at.tgm.client.dashboard.DashboardFrame;
+import at.tgm.network.packets.C2SGETStats;
 import at.tgm.network.packets.C2SHelloPacket;
 import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Nutzer;
@@ -23,6 +24,8 @@ public class Client {
 
         // Login-GUI starten
         GUI.showLogin();
+
+
 
         // Hallo-Paket an den Server
         ClientNetworkController.socketClient.send(new C2SHelloPacket("MAC_OS"));

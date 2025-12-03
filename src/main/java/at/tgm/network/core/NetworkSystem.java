@@ -10,9 +10,12 @@ public class NetworkSystem {
         PacketRegistry.registerPacket(C2SAuthenticationPacket.class); //1
         PacketRegistry.registerPacket(S2CLoginPacket.class); //2
         PacketRegistry.registerPacket(S2CLoginFailedPacket.class); //3
-        PacketRegistry.registerPacket(C2SPlayQuiz.class); //4
+        PacketRegistry.registerPacket(C2SINITQuiz.class); //4
         PacketRegistry.registerPacket(S2CPOSTQuiz.class); //5
         PacketRegistry.registerPacket(C2SPOSTQuizResults.class); //6
         PacketRegistry.registerPacket(S2CResultOfQuiz.class); //7
+        PacketRegistry.registerPacket(S2CPOSTQuiz.class); //8
+        PacketRegistry.registerPacket(C2SGETStats.class); //9
+        PacketRegistry.registerPacket(S2CPOSTStats.class); //10
     }
 }

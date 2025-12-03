@@ -1,11 +1,14 @@
 package at.tgm.client.dashboard;
 
+import at.tgm.client.ClientNetworkController;
 import at.tgm.client.GuiController;
 import at.tgm.client.profile.ProfilePanel;
 import at.tgm.client.quiz.QuizPanel;
+import at.tgm.network.packets.C2SGETStats;
 import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Nutzer;
 import at.tgm.objects.NutzerStatus;
+import at.tgm.objects.Quiz;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -26,6 +29,21 @@ public class DashboardFrame extends JFrame {
 
     private QuizPanel quizPanel;
     private ProfilePanel profilePanel;
+    private StatsPanel statsPanel;
+
+    public void showStats(Quiz[] quizzes) {
+        if (statsPanel != null) {
+            contentPanel.remove(statsPanel);
+        }
+
+        statsPanel = new StatsPanel(quizzes, this);
+        contentPanel.add(statsPanel, "STATS_VIEW");
+
+        showCard("STATS_VIEW");
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
 
     public DashboardFrame(Nutzer nutzer) {
         this(nutzer, null);
@@ -156,7 +174,22 @@ public class DashboardFrame extends JFrame {
         }));
         side.add(Box.createRigidArea(new Dimension(0, 8)));
 
-        side.add(createMenuButton("Statistiken", () -> showCard("STATS")));
+        side.add(createMenuButton("Statistiken", () -> {
+            if (controller != null) {
+
+                // 1. Lade-Ansicht anzeigen
+                showCard("STATS_LOADING");
+
+                try {
+                    // 2. Server-Abfrage schicken
+                    C2SGETStats packet = new C2SGETStats();
+                    ClientNetworkController.socketClient.send(packet);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }));
+
         side.add(Box.createRigidArea(new Dimension(0, 8)));
 
         side.add(createMenuButton("Einstellungen", () -> showCard("SETTINGS")));
