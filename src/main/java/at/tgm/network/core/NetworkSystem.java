@@ -12,5 +12,7 @@ public class NetworkSystem {
         PacketRegistry.registerPacket(S2CLoginFailedPacket.class); //3
         PacketRegistry.registerPacket(C2SPlayQuiz.class); //4
         PacketRegistry.registerPacket(S2CPOSTQuiz.class); //5
+        PacketRegistry.registerPacket(C2SPOSTQuizResults.class); //6
+        PacketRegistry.registerPacket(S2CResultOfQuiz.class); //7
     }
 }

@@ -3,6 +3,7 @@ package at.tgm.objects;
 public class Quiz extends SendableObject{
 
     private FachbegriffItem[] items;
+    private FachbegriffItem[] userItems;
     private long timeStarted;
     private long timeEnded;
 
@@ -11,6 +12,14 @@ public class Quiz extends SendableObject{
         this.timeStarted = timeStarted;
         getRandomItems(items);
 
+    }
+
+    public FachbegriffItem[] getUserItems() {
+        return userItems;
+    }
+
+    public void setUserItems(FachbegriffItem[] userItems) {
+        this.userItems = userItems;
     }
 
     public long getTimeStarted() {
@@ -119,4 +128,7 @@ public class Quiz extends SendableObject{
     }
 
 
+    public FachbegriffItem[] getItems() {
+        return items;
+    }
 }

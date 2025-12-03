@@ -31,6 +31,13 @@ public class DashboardFrame extends JFrame {
         this(nutzer, null);
     }
 
+    public void showQuizResults(FachbegriffItem[] correctedItems, int points, int maxPoints) {
+        if (quizPanel != null) {
+            quizPanel.showResults(correctedItems, points, maxPoints);
+            showCard("QUIZ"); // sicherstellen, dass die Quiz-Card sichtbar ist
+        }
+    }
+
     public DashboardFrame(Nutzer nutzer, GuiController controller) {
         this.nutzer = nutzer;
         this.controller = controller;
@@ -53,6 +60,10 @@ public class DashboardFrame extends JFrame {
     public void setNutzer(Nutzer nutzer) {
         this.nutzer = nutzer;
         // Optional: Header neu aufbauen, falls nötig
+    }
+
+    public QuizPanel getQuizPanel() {
+        return quizPanel;
     }
 
     // =======================================================

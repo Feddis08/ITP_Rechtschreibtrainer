@@ -5,11 +5,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="426417ca-f9af-4249-bb16-12cba3f72fe1" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/client/GuiController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/client/quiz/QuizFinishedListener.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/network/packets/C2SPOSTQuizResults.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/network/packets/S2CResultOfQuiz.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/client/Client.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/client/Client.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/client/anmeldung/AnmeldeController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/client/anmeldung/AnmeldeController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/client/anmeldung/AnmeldeFrame.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/client/anmeldung/LoginPanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/client/dashboard/DashboardFrame.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/client/dashboard/DashboardFrame.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/client/quiz/QuizPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/client/quiz/QuizPanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/network/core/NetworkSystem.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/network/core/NetworkSystem.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/network/packets/C2SPlayQuiz.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/network/packets/C2SPlayQuiz.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/objects/FachbegriffItem.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/objects/FachbegriffItem.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/objects/Quiz.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/objects/Quiz.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/server/ServerClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/server/ServerSchuelerClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/server/ServerNetworkController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/server/ServerNetworkController.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -20,6 +27,23 @@
     <projectState path="$PROJECT_DIR$">
       <ProjectState />
     </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="ITP_Rechtschreibtrainer" type="f1a62948:ProjectNode" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">

@@ -14,6 +14,10 @@ public class FachbegriffItem extends SendableObject{
         this.phrase = phrase;
     }
 
+    public void setWord(String word) {
+        this.word = word;
+    }
+
     public String getWord() {
         return word;
     }
@@ -33,5 +37,17 @@ public class FachbegriffItem extends SendableObject{
 
     public FachbegriffItem buildCensoredItem(){
         return new FachbegriffItem(null, this.level, this.points, this.phrase);
+    }
+
+    public void setLevel(int level) {
+        this.level = level;
+    }
+
+    public void setPoints(int points) {
+        this.points = points;
+    }
+
+    public void setPhrase(String phrase) {
+        this.phrase = phrase;
     }
 }
