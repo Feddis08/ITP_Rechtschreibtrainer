@@ -1,8 +1,9 @@
 package at.tgm.client.dashboard;
 
-import at.tgm.client.ClientNetworkController;
-import at.tgm.client.profile.ProfileFrame;
-import at.tgm.network.packets.C2SPlayQuiz;
+import at.tgm.client.GuiController;
+import at.tgm.client.profile.ProfilePanel;
+import at.tgm.client.quiz.QuizPanel;
+import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Nutzer;
 import at.tgm.objects.NutzerStatus;
 
@@ -12,27 +13,34 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 
 public class DashboardFrame extends JFrame {
 
-    private final Nutzer nutzer;
+    private Nutzer nutzer;
+    private final GuiController controller;
 
-    // Panel in der Mitte (für Quiz, Statistiken, etc.)
+    // Panel in der Mitte (für Quiz, Profil, Statistiken, etc.)
     private final JPanel contentPanel;
 
+    private QuizPanel quizPanel;
+    private ProfilePanel profilePanel;
+
     public DashboardFrame(Nutzer nutzer) {
+        this(nutzer, null);
+    }
+
+    public DashboardFrame(Nutzer nutzer, GuiController controller) {
         this.nutzer = nutzer;
+        this.controller = controller;
 
         setTitle("Fachbegrifftrainer – Dashboard");
         setSize(900, 600);
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Dashboard zu -> ganze App zu
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // Aufbau
         add(buildHeaderPanel(), BorderLayout.NORTH);
         add(buildSidebar(), BorderLayout.WEST);
 
@@ -42,31 +50,32 @@ public class DashboardFrame extends JFrame {
         setVisible(true);
     }
 
+    public void setNutzer(Nutzer nutzer) {
+        this.nutzer = nutzer;
+        // Optional: Header neu aufbauen, falls nötig
+    }
+
     // =======================================================
-    // HEADER: App-Titel + Mini-Profil rechts
+    // HEADER
     // =======================================================
     private JComponent buildHeaderPanel() {
         JPanel header = new JPanel(new BorderLayout());
         header.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
         header.setBackground(new Color(240, 240, 240));
 
-        // Titel links
         JLabel title = new JLabel("Fachbegrifftrainer – Dashboard");
         title.setFont(new Font("Arial", Font.BOLD, 18));
         header.add(title, BorderLayout.WEST);
 
-        // Mini-Profil rechts (klickbar)
         JPanel profileMini = new JPanel();
         profileMini.setLayout(new FlowLayout(FlowLayout.RIGHT, 8, 4));
         profileMini.setOpaque(false);
         profileMini.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        // Avatar klein
         JLabel avatarLabel = new JLabel();
         ImageIcon avatarIcon = loadAvatarIcon(nutzer.getProfilePictureUrl(), 32, 32);
         avatarLabel.setIcon(avatarIcon);
 
-        // Name + Status
         JPanel textPanel = new JPanel(new GridLayout(2, 1, 0, 0));
         textPanel.setOpaque(false);
 
@@ -78,7 +87,6 @@ public class DashboardFrame extends JFrame {
         JLabel nameLabel = new JLabel(displayName);
         nameLabel.setFont(new Font("Arial", Font.PLAIN, 14));
 
-        // Status-Linie: ● ONLINE
         JLabel statusLabel = new JLabel();
         statusLabel.setFont(new Font("Arial", Font.PLAIN, 12));
 
@@ -86,7 +94,6 @@ public class DashboardFrame extends JFrame {
         String statusText = (status != null) ? status.name() : "OFFLINE";
         Color statusColor = colorForStatus(status);
 
-        // farbiger Punkt + Text
         statusLabel.setText("● " + statusText);
         statusLabel.setForeground(statusColor);
 
@@ -96,11 +103,14 @@ public class DashboardFrame extends JFrame {
         profileMini.add(textPanel);
         profileMini.add(avatarLabel);
 
-        // Klick -> Profilfenster öffnen
         profileMini.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                new ProfileFrame(nutzer);
+                if (controller != null) {
+                    controller.showProfile();
+                } else {
+                    showProfile();
+                }
             }
         });
 
@@ -109,7 +119,7 @@ public class DashboardFrame extends JFrame {
     }
 
     // =======================================================
-    // SIDEBAR: Buttons links
+    // SIDEBAR
     // =======================================================
     private JComponent buildSidebar() {
         JPanel side = new JPanel();
@@ -125,31 +135,22 @@ public class DashboardFrame extends JFrame {
         side.add(menuLabel);
         side.add(Box.createRigidArea(new Dimension(0, 16)));
 
-        // Buttons anlegen
         side.add(createMenuButton("Quiz starten", () -> {
-            try {
-                showCard("QUIZ");
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            // Netzwerk anfragen
+            if (controller != null) {
+                controller.onQuizMenuClicked();
             }
+            // optional: Lade-Ansicht anzeigen
+            showCard("QUIZ_LOADING");
         }));
         side.add(Box.createRigidArea(new Dimension(0, 8)));
-        side.add(createMenuButton("Statistiken", () -> {
-            try {
-                showCard("STATS");
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }));
+
+        side.add(createMenuButton("Statistiken", () -> showCard("STATS")));
         side.add(Box.createRigidArea(new Dimension(0, 8)));
-        side.add(createMenuButton("Einstellungen", () -> {
-            try {
-                showCard("SETTINGS");
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }));
+
+        side.add(createMenuButton("Einstellungen", () -> showCard("SETTINGS")));
         side.add(Box.createVerticalGlue());
+
         side.add(createMenuButton("Beenden", this::exitApp));
 
         return side;
@@ -165,19 +166,18 @@ public class DashboardFrame extends JFrame {
     }
 
     // =======================================================
-    // CONTENT-BEREICH (Mitte) – CardLayout für spätere Inhalte
+    // CONTENT – CardLayout
     // =======================================================
     private JPanel buildContentPanel() {
         JPanel panel = new JPanel(new CardLayout());
 
-        // Placeholder-Panels
         panel.add(buildPlaceholderPanel("Willkommen, " + nutzer.getUsername() + "!", """
                 Wähle links im Menü eine Aktion aus, um zu starten.
                 """), "HOME");
 
-        panel.add(buildPlaceholderPanel("Quiz starten", """
-                Hier könnte dein Quiz-Panel stehen (Fragen, Timer, Punkte, ...).
-                """), "QUIZ");
+        panel.add(buildPlaceholderPanel("Quiz wird geladen...", """
+                Die Fachbegriffe werden gerade vom Server geladen.
+                """), "QUIZ_LOADING");
 
         panel.add(buildPlaceholderPanel("Statistiken", """
                 Hier könntest du Statistiken anzeigen:
@@ -193,7 +193,6 @@ public class DashboardFrame extends JFrame {
                 - Theme, usw.
                 """), "SETTINGS");
 
-        // Standard-Ansicht: HOME
         ((CardLayout) panel.getLayout()).show(panel, "HOME");
         return panel;
     }
@@ -219,26 +218,40 @@ public class DashboardFrame extends JFrame {
         return p;
     }
 
-    private void showCard(String name) throws IOException {
+    private void showCard(String name) {
         CardLayout cl = (CardLayout) contentPanel.getLayout();
         cl.show(contentPanel, name);
+    }
 
-        System.out.println("Selected: " + name);
-
-        if (name.equals("QUIZ")){
-            C2SPlayQuiz packet = new C2SPlayQuiz();
-            ClientNetworkController.socketClient.send(packet);
+    // Vom GuiController aufgerufen
+    public void showQuiz(FachbegriffItem[] items) {
+        if (quizPanel != null) {
+            contentPanel.remove(quizPanel);
         }
+        quizPanel = new QuizPanel(items);
+        contentPanel.add(quizPanel, "QUIZ");
+        showCard("QUIZ");
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
 
+    // Vom GuiController aufgerufen
+    public void showProfile() {
+        if (profilePanel == null) {
+            profilePanel = new ProfilePanel(nutzer);
+            contentPanel.add(profilePanel, "PROFILE");
+        }
+        showCard("PROFILE");
+        contentPanel.revalidate();
+        contentPanel.repaint();
     }
 
     private void exitApp() {
-        // Hier könntest du vorher noch "Logout" Packet an den Server schicken
         System.exit(0);
     }
 
     // =======================================================
-    // HILFSMETHODEN: Avatar + Statusfarbe
+    // Avatar + Statusfarbe
     // =======================================================
     private ImageIcon loadAvatarIcon(String url, int w, int h) {
         try {
@@ -256,7 +269,6 @@ public class DashboardFrame extends JFrame {
             }
         } catch (Exception ignored) {
         }
-        // Fallback: einfacher grauer Kreis
         Image img = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = (Graphics2D) img.getGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);

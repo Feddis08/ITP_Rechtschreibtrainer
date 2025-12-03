@@ -3,20 +3,17 @@ package at.tgm.client.anmeldung;
 import javax.swing.*;
 import java.awt.*;
 
-public class AnmeldeFrame extends JFrame {
+public class LoginPanel extends JPanel {
 
     private JTextField usernameField;
     private JPasswordField passwordField;
-    private AnmeldeController ac;
+    private final AnmeldeController ac;
 
-    public AnmeldeFrame(AnmeldeController ac) {
+    public LoginPanel(AnmeldeController ac) {
         this.ac = ac;
 
-        setTitle("Anmeldung");
-        setSize(350, 200);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // zentrieren
         setLayout(new BorderLayout());
+        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // ====== Center Panel (Form) ======
         JPanel formPanel = new JPanel();
@@ -34,13 +31,12 @@ public class AnmeldeFrame extends JFrame {
 
         // ====== Bottom Panel (Button) ======
         JButton loginButton = new JButton("Anmelden");
-        loginButton.addActionListener(this.ac.onLogin());
+        loginButton.addActionListener(ac.onLogin());
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(loginButton);
-        add(buttonPanel, BorderLayout.SOUTH);
 
-        setResizable(false);
+        add(buttonPanel, BorderLayout.SOUTH);
     }
 
     public String getUsername(){

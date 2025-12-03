@@ -1,7 +1,6 @@
 package at.tgm.network.packets;
 
 import at.tgm.client.Client;
-import at.tgm.client.quiz.QuizFrame;
 import at.tgm.network.core.NetworkContext;
 import at.tgm.network.core.Packet;
 import at.tgm.objects.FachbegriffItem;
@@ -53,6 +52,6 @@ public class S2CPOSTQuiz implements Packet {
 
     @Override
     public void handle(NetworkContext ctx) {
-        Client.quizFrame = new QuizFrame(fachbegriffItems);
+        Client.startQuiz(this.fachbegriffItems);
     }
 }
