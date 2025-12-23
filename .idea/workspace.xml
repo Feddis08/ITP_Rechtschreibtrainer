@@ -5,17 +5,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="426417ca-f9af-4249-bb16-12cba3f72fe1" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/client/dashboard/StatsPanel.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/network/packets/C2SGETStats.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/network/packets/S2CPOSTStats.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/client/dashboard/SchuelerDashboardPanel.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/client/dashboard/SchuelerListPanel.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/network/packets/C2SGETAllSchueler.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/network/packets/S2CPOSTAllSchueler.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/objects/Lehrer.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/server/ServerClient.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/at/tgm/server/ServerLehrerClient.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/client/Client.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/client/Client.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/client/GuiController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/client/GuiController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/client/dashboard/DashboardFrame.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/client/dashboard/DashboardFrame.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/network/core/NetworkSystem.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/network/core/NetworkSystem.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/network/packets/C2SPlayQuiz.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/network/packets/C2SINITQuiz.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/objects/Quiz.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/objects/Quiz.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/objects/Schueler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/objects/Schueler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/network/packets/C2SAuthenticationPacket.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/network/packets/C2SAuthenticationPacket.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/server/Server.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/server/Server.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/server/ServerNetworkController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/server/ServerNetworkController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/at/tgm/server/ServerSchuelerClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/at/tgm/server/ServerSchuelerClient.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -65,17 +68,17 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "project.structure.last.edited": "Project",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0",
-    "settings.editor.selected.configurable": "preferences.pluginManager"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.keymap&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="at.tgm.client" />

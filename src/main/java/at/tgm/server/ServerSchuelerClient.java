@@ -12,10 +12,10 @@ import at.tgm.objects.Schueler;
 import java.io.IOException;
 import java.net.Socket;
 
-public class ServerSchuelerClient extends SocketClient {
+public class ServerSchuelerClient extends ServerClient {
 
     public ServerSchuelerClient(Socket socket) throws IOException {
-        super(socket, Distro.SERVER);
+        super(socket);
     }
 
     /**

@@ -2,10 +2,12 @@ package at.tgm.client;
 
 import at.tgm.client.anmeldung.AnmeldeController;
 import at.tgm.client.dashboard.DashboardFrame;
+import at.tgm.network.packets.C2SGETAllSchueler;
 import at.tgm.network.packets.C2SINITQuiz;
 import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Nutzer;
 import at.tgm.objects.Quiz;
+import at.tgm.objects.Schueler;
 
 import java.io.IOException;
 
@@ -58,6 +60,18 @@ public class GuiController {
     public void showStats(Quiz[] quizzes) {
         if (dashboardFrame != null) {
             dashboardFrame.showStats(quizzes);
+        }
+    }
+    // Lehrer klickt im Menü auf "Schüler"
+    public void onSchuelerMenuClicked() throws IOException {
+        C2SGETAllSchueler packet = new C2SGETAllSchueler();
+        ClientNetworkController.socketClient.send(packet);
+    }
+
+    // Wird vom Netzwerkcode aufgerufen, wenn die Schülerliste ankommt
+    public void showSchuelerList(Schueler[] schueler) {
+        if (dashboardFrame != null) {
+            dashboardFrame.showSchuelerList(schueler);
         }
     }
 

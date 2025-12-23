@@ -2,9 +2,14 @@ package at.tgm.network.packets;
 
 import at.tgm.network.core.NetworkContext;
 import at.tgm.network.core.Packet;
+import at.tgm.objects.Lehrer;
 import at.tgm.objects.Nutzer;
+import at.tgm.objects.Schueler;
 import at.tgm.server.Server;
 import at.tgm.network.core.SocketClient;
+import at.tgm.server.ServerLehrerClient;
+import at.tgm.server.ServerNetworkController;
+import at.tgm.server.ServerSchuelerClient;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -44,9 +49,21 @@ public class C2SAuthenticationPacket implements Packet {
         System.out.println("Neue Anmeldung: " + this.username);
         try {
             if (n != null && n.checkPassword(this.password)){
-               client.setNutzer(n);
-               client.send(new S2CLoginPacket(n));
+
+                ServerNetworkController.removeClient(client);
+
+               if (n instanceof Schueler){
+                   client = new ServerSchuelerClient(client.getSocket());
+               }else if(n instanceof Lehrer){
+                   client = new ServerLehrerClient(client.getSocket());
+               }
+
+               ServerNetworkController.addClient(client);
+                client.setNutzer(n);
+                client.send(new S2CLoginPacket(n));
+
                 System.out.println("Login Packet");
+
             }else{
                client.send(new S2CLoginFailedPacket());
                 System.out.println("Failed Packet");
@@ -55,6 +72,7 @@ public class C2SAuthenticationPacket implements Packet {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
+
 
     }
 }

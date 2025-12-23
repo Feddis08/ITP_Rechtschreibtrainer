@@ -5,10 +5,7 @@ import at.tgm.client.GuiController;
 import at.tgm.client.profile.ProfilePanel;
 import at.tgm.client.quiz.QuizPanel;
 import at.tgm.network.packets.C2SGETStats;
-import at.tgm.objects.FachbegriffItem;
-import at.tgm.objects.Nutzer;
-import at.tgm.objects.NutzerStatus;
-import at.tgm.objects.Quiz;
+import at.tgm.objects.*;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -16,6 +13,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -30,6 +28,12 @@ public class DashboardFrame extends JFrame {
     private QuizPanel quizPanel;
     private ProfilePanel profilePanel;
     private StatsPanel statsPanel;
+    private SchuelerListPanel schuelerListPanel;
+    private SchuelerDashboardPanel schuelerDashboardPanel;
+
+    // =========================
+    // Öffentliche API-Methoden
+    // =========================
 
     public void showStats(Quiz[] quizzes) {
         if (statsPanel != null) {
@@ -44,6 +48,34 @@ public class DashboardFrame extends JFrame {
         contentPanel.repaint();
     }
 
+    // Wird von außen (Netzwerk/GuiController) aufgerufen, wenn Schueler[] da ist
+    public void showSchuelerList(Schueler[] schueler) {
+        if (schuelerListPanel != null) {
+            contentPanel.remove(schuelerListPanel);
+        }
+
+        schuelerListPanel = new SchuelerListPanel(schueler, this);
+        contentPanel.add(schuelerListPanel, "SCHUELER_LIST");
+
+        showCard("SCHUELER_LIST");
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
+    // Wird von SchuelerListPanel aufgerufen, wenn man auf einen Schüler klickt
+    public void showSchuelerDashboard(Schueler schueler) {
+        if (schuelerDashboardPanel == null) {
+            schuelerDashboardPanel = new SchuelerDashboardPanel();
+            contentPanel.add(schuelerDashboardPanel, "SCHUELER_DASHBOARD");
+        }
+
+        schuelerDashboardPanel.setSchueler(schueler);
+        showCard("SCHUELER_DASHBOARD");
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
+    // =========================
 
     public DashboardFrame(Nutzer nutzer) {
         this(nutzer, null);
@@ -67,10 +99,11 @@ public class DashboardFrame extends JFrame {
         setLayout(new BorderLayout());
 
         add(buildHeaderPanel(), BorderLayout.NORTH);
-        add(buildSidebar(), BorderLayout.WEST);
 
         contentPanel = buildContentPanel();
         add(contentPanel, BorderLayout.CENTER);
+
+        add(buildSidebar(), BorderLayout.WEST);
 
         setVisible(true);
     }
@@ -148,9 +181,19 @@ public class DashboardFrame extends JFrame {
     }
 
     // =======================================================
-    // SIDEBAR
+    // SIDEBAR – role-based
     // =======================================================
     private JComponent buildSidebar() {
+        if (nutzer instanceof Schueler) {
+            return buildSchuelerSidebar();
+        } else if (nutzer instanceof Lehrer) {
+            return buildLehrerSidebar();
+        } else {
+            return buildDefaultSidebar();
+        }
+    }
+
+    private JPanel createSidebarBase() {
         JPanel side = new JPanel();
         side.setLayout(new BoxLayout(side, BoxLayout.Y_AXIS));
         side.setPreferredSize(new Dimension(200, 0));
@@ -163,40 +206,61 @@ public class DashboardFrame extends JFrame {
 
         side.add(menuLabel);
         side.add(Box.createRigidArea(new Dimension(0, 16)));
+        return side;
+    }
+
+    // Sidebar für Schüler: nur Quiz + Statistiken + Beenden
+    private JComponent buildSchuelerSidebar() {
+        JPanel side = createSidebarBase();
 
         side.add(createMenuButton("Quiz starten", () -> {
-            // Netzwerk anfragen
             if (controller != null) {
                 controller.onQuizMenuClicked();
             }
-            // optional: Lade-Ansicht anzeigen
             showCard("QUIZ_LOADING");
         }));
         side.add(Box.createRigidArea(new Dimension(0, 8)));
 
         side.add(createMenuButton("Statistiken", () -> {
-            if (controller != null) {
-
-                // 1. Lade-Ansicht anzeigen
-                showCard("STATS_LOADING");
-
-                try {
-                    // 2. Server-Abfrage schicken
-                    C2SGETStats packet = new C2SGETStats();
-                    ClientNetworkController.socketClient.send(packet);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
+            showCard("STATS_LOADING");
+            try {
+                C2SGETStats packet = new C2SGETStats();
+                ClientNetworkController.socketClient.send(packet);
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
         }));
-
-        side.add(Box.createRigidArea(new Dimension(0, 8)));
-
-        side.add(createMenuButton("Einstellungen", () -> showCard("SETTINGS")));
         side.add(Box.createVerticalGlue());
 
         side.add(createMenuButton("Beenden", this::exitApp));
+        return side;
+    }
 
+    // Sidebar für Lehrer: Schülerliste + Beenden
+    private JComponent buildLehrerSidebar() {
+        JPanel side = createSidebarBase();
+
+        side.add(createMenuButton("Schüler", () -> {
+            showCard("SCHUELER_LOADING");
+            if (controller != null) {
+                // Controller schickt Request an Server, Antwort: Schueler[]
+                try {
+                    controller.onSchuelerMenuClicked();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }));
+        side.add(Box.createVerticalGlue());
+
+        side.add(createMenuButton("Beenden", this::exitApp));
+        return side;
+    }
+
+    // Fallback, falls mal ein anderer Nutzertyp kommt
+    private JComponent buildDefaultSidebar() {
+        JPanel side = createSidebarBase();
+        side.add(createMenuButton("Beenden", this::exitApp));
         return side;
     }
 
@@ -223,19 +287,13 @@ public class DashboardFrame extends JFrame {
                 Die Fachbegriffe werden gerade vom Server geladen.
                 """), "QUIZ_LOADING");
 
-        panel.add(buildPlaceholderPanel("Statistiken", """
-                Hier könntest du Statistiken anzeigen:
-                - Anzahl beantworteter Fragen
-                - Trefferquote
-                - Schwierigkeit, etc.
-                """), "STATS");
+        panel.add(buildPlaceholderPanel("Statistiken werden geladen...", """
+                Bitte warten...
+                """), "STATS_LOADING");
 
-        panel.add(buildPlaceholderPanel("Einstellungen", """
-                Einstellungen für deinen Fachbegrifftrainer:
-                - Sprache
-                - Schwierigkeitsgrad
-                - Theme, usw.
-                """), "SETTINGS");
+        panel.add(buildPlaceholderPanel("Schülerliste wird geladen...", """
+                Bitte warten...
+                """), "SCHUELER_LOADING");
 
         ((CardLayout) panel.getLayout()).show(panel, "HOME");
         return panel;

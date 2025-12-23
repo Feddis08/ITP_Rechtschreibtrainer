@@ -24,7 +24,7 @@ public class ServerNetworkController {
                 Socket client = serverSocket.accept();
                 System.out.println("[SERVER] Client connected: " + client.getInetAddress());
 
-                addClient(new ServerSchuelerClient(client));
+                addClient(new ServerClient(client));
 
 
             }
@@ -56,7 +56,7 @@ public class ServerNetworkController {
     }
 
 
-    public static void addClient(ServerSchuelerClient client){
+    public static void addClient(SocketClient client){
 
             System.out.println("adding new client");
 
