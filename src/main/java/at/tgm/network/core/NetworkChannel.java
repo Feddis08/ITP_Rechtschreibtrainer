@@ -29,6 +29,11 @@ public class NetworkChannel {
     }
 
     public void send(Packet packet) throws IOException {
+        if (socket.isClosed() || !socket.isConnected()) {
+            logger.warn("Versuch, Paket über geschlossene/ungültige Verbindung zu senden: {}", packet.getClass().getSimpleName());
+            throw new IOException("Socket is closed or not connected");
+        }
+
         int id = PacketRegistry.getPacketId(packet.getClass());
         if (id < 0) {
             logger.error("Paket nicht registriert: {}", packet.getClass().getSimpleName());
@@ -75,26 +80,48 @@ public class NetworkChannel {
                     logger.debug("Paket dekodiert, verarbeite: {}", packetClass.getSimpleName());
                     packet.handle(context);
                 }
+            } catch (java.io.EOFException e) {
+                // Verbindung wurde ordnungsgemäß geschlossen
+                logger.info("Verbindung wurde geschlossen (EOF)");
+                handleDisconnection(context);
+            } catch (java.net.SocketException e) {
+                // Socket-Fehler (Verbindung unterbrochen)
+                logger.warn("Socket-Fehler: Verbindung unterbrochen - {}", e.getMessage());
+                handleDisconnection(context);
+            } catch (java.io.IOException e) {
+                // Andere IO-Fehler
+                logger.error("IO-Fehler im NetworkChannel", e);
+                handleDisconnection(context);
             } catch (Exception e) {
-                logger.error("Fehler im NetworkChannel, Verbindung wird geschlossen", e);
-
-                if (!(context instanceof SocketClient sc))
-                    return;
-
-                if (sc.getDistro().equals(Distro.SERVER)) {
-                    logger.info("Entferne Server-Client aufgrund von Verbindungsfehler");
-                    ServerNetworkController.removeClient(sc);
-                }else if(sc.getDistro().equals(Distro.CLIENT)){
-                    logger.info("Schließe Client-Verbindung aufgrund von Fehler");
-                    try {
-                        sc.getSocket().close();
-                    } catch (IOException ex) {
-                        logger.error("Fehler beim Schließen des Client-Sockets", ex);
-                        throw new RuntimeException(ex);
-                    }
-                }
-
+                logger.error("Unerwarteter Fehler im NetworkChannel", e);
+                handleDisconnection(context);
             }
         }).start();
+    }
+
+    private void handleDisconnection(NetworkContext context) {
+        if (!(context instanceof SocketClient sc))
+            return;
+
+        if (sc.getDistro().equals(Distro.SERVER)) {
+            logger.info("Entferne Server-Client aufgrund von Verbindungsfehler");
+            ServerNetworkController.removeClient(sc);
+        } else if (sc.getDistro().equals(Distro.CLIENT)) {
+            logger.info("Client-Verbindung verloren - benachrichtige Client");
+            try {
+                if (!sc.getSocket().isClosed()) {
+                    sc.getSocket().close();
+                }
+            } catch (IOException ex) {
+                logger.error("Fehler beim Schließen des Client-Sockets", ex);
+            }
+            
+            // Benachrichtige den Client über den Verbindungsverlust
+            try {
+                at.tgm.client.Client.connectionLost();
+            } catch (Exception ex) {
+                logger.error("Fehler beim Benachrichtigen des Clients über Verbindungsverlust", ex);
+            }
+        }
     }
 }

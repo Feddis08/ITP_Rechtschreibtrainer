@@ -55,4 +55,22 @@ public class Client {
         logger.info("Quiz gestartet mit {} Items", items != null ? items.length : 0);
         GUI.showQuiz(items);
     }
+
+    // Wird vom Netzwerkcode aufgerufen, wenn die Verbindung verloren geht
+    public static void connectionLost() {
+        logger.error("Verbindung zum Server verloren - Client wird beendet");
+        
+        // Zeige Fehlermeldung im EDT und beende nach Anzeige
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            javax.swing.JOptionPane.showMessageDialog(
+                null,
+                "Verbindung zum Server verloren.\nDie Anwendung wird beendet.",
+                "Verbindungsfehler",
+                javax.swing.JOptionPane.ERROR_MESSAGE
+            );
+            
+            // Beende die Anwendung
+            System.exit(1);
+        });
+    }
 }

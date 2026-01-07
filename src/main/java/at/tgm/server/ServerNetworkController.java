@@ -47,6 +47,15 @@ public class ServerNetworkController {
 
         logger.info("Entferne Client: {}", client.getSocket().getRemoteSocketAddress());
 
+        // Wenn der Client authentifiziert war, setze den Nutzer-Status auf OFFLINE
+        if (client instanceof ServerClient serverClient) {
+            at.tgm.objects.Nutzer nutzer = serverClient.getNutzer();
+            if (nutzer != null) {
+                nutzer.setStatus(at.tgm.objects.NutzerStatus.OFFLINE);
+                logger.info("Status von Nutzer '{}' auf OFFLINE gesetzt", nutzer.getUsername());
+            }
+        }
+
         for (int i = 0; i < clients.length; i++) {
             SocketClient c = clients[i];
 
@@ -56,8 +65,10 @@ public class ServerNetworkController {
                     .equals(client.getSocket().getRemoteSocketAddress())) {
 
                 try {
-                    c.getSocket().close();
-                    logger.debug("Client-Socket geschlossen");
+                    if (!c.getSocket().isClosed()) {
+                        c.getSocket().close();
+                        logger.debug("Client-Socket geschlossen");
+                    }
                 } catch (IOException e) {
                     logger.warn("Fehler beim Schließen des Client-Sockets", e);
                 }

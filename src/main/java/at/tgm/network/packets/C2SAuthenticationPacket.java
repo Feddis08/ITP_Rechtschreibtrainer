@@ -88,9 +88,10 @@ public class C2SAuthenticationPacket implements Packet {
                     }
                     
                     serverClient.setNutzer(n);
+                    n.setStatus(at.tgm.objects.NutzerStatus.ONLINE);
                     serverClient.send(new S2CLoginPacket(n));
 
-                    logger.info("Login erfolgreich für: {} (Typ: {})", this.username, n.getClass().getSimpleName());
+                    logger.info("Login erfolgreich für: {} (Typ: {}), Status auf ONLINE gesetzt", this.username, n.getClass().getSimpleName());
                 } else {
                     logger.warn("Invalid client type für Authentifizierung: {}", client.getClass().getSimpleName());
                     client.send(new S2CLoginFailedPacket());
