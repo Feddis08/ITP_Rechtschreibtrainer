@@ -39,6 +39,22 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    
+    // Show test output in console
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = true
+    }
+    
+    // Ensure tests have enough time (for integration tests)  
+    // Note: Individual test timeouts are handled via @Timeout annotation in test classes
+    
+    // Run tests even if there are test failures
+    ignoreFailures = false
+    
+    // Fork JVM for tests to avoid conflicts
+    forkEvery = 1
 }
 
 // Helper task to print classpath (for debugging)

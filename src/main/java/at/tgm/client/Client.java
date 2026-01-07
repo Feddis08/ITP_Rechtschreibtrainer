@@ -37,9 +37,32 @@ public class Client {
         ClientNetworkController.socketClient.send(new C2SHelloPacket("MAC_OS"));
     }
 
+    // Test callback interface - allows tests to intercept login events without GUI
+    private static TestLoginCallback testCallback = null;
+    
+    /**
+     * Sets a test callback for headless testing. Should only be used in test code.
+     * @param callback The test callback, or null to disable test mode
+     */
+    public static void setTestCallback(TestLoginCallback callback) {
+        testCallback = callback;
+    }
+    
+    public interface TestLoginCallback {
+        void onLogin(Nutzer n);
+        void onLoginFailed();
+    }
+
     // Wird vom Netzwerkcode aufgerufen
     public static void failedLogin() {
         logger.warn("Login fehlgeschlagen");
+        
+        // If in test mode, route to test callback instead of GUI
+        if (testCallback != null) {
+            testCallback.onLoginFailed();
+            return;
+        }
+        
         GUI.loginFailed("Failed Login", "Check Username or Password!");
     }
 
@@ -47,6 +70,13 @@ public class Client {
     public static void login(Nutzer n) {
         logger.info("Login erfolgreich für Benutzer: {}", n != null ? n.getUsername() : "unknown");
         Client.nutzer = n;
+        
+        // If in test mode, route to test callback instead of GUI
+        if (testCallback != null) {
+            testCallback.onLogin(n);
+            return;
+        }
+        
         GUI.loginSuccessful(n);
     }
 
