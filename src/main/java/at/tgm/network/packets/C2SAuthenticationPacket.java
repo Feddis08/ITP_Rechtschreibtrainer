@@ -7,9 +7,9 @@ import at.tgm.objects.Nutzer;
 import at.tgm.objects.Schueler;
 import at.tgm.server.Server;
 import at.tgm.network.core.SocketClient;
-import at.tgm.server.ServerLehrerClient;
-import at.tgm.server.ServerNetworkController;
-import at.tgm.server.ServerSchuelerClient;
+import at.tgm.server.LehrerState;
+import at.tgm.server.SchuelerState;
+import at.tgm.server.ServerClient;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -50,19 +50,25 @@ public class C2SAuthenticationPacket implements Packet {
         try {
             if (n != null && n.checkPassword(this.password)){
 
-                ServerNetworkController.removeClient(client);
+                // Client bleibt derselbe - nur State ändern
+                if (client instanceof ServerClient) {
+                    ServerClient serverClient = (ServerClient) client;
+                    
+                    // State basierend auf Nutzertyp setzen
+                    if (n instanceof Schueler) {
+                        serverClient.setState(new SchuelerState());
+                    } else if (n instanceof Lehrer) {
+                        serverClient.setState(new LehrerState());
+                    }
+                    
+                    serverClient.setNutzer(n);
+                    serverClient.send(new S2CLoginPacket(n));
 
-               if (n instanceof Schueler){
-                   client = new ServerSchuelerClient(client.getSocket());
-               }else if(n instanceof Lehrer){
-                   client = new ServerLehrerClient(client.getSocket());
-               }
-
-               ServerNetworkController.addClient(client);
-                client.setNutzer(n);
-                client.send(new S2CLoginPacket(n));
-
-                System.out.println("Login Packet");
+                    System.out.println("Login Packet");
+                } else {
+                    client.send(new S2CLoginFailedPacket());
+                    System.out.println("Invalid client type");
+                }
 
             }else{
                client.send(new S2CLoginFailedPacket());

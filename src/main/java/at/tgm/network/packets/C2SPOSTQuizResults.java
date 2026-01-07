@@ -1,10 +1,9 @@
 package at.tgm.network.packets;
 
-import at.tgm.client.Client;
 import at.tgm.network.core.NetworkContext;
 import at.tgm.network.core.Packet;
 import at.tgm.objects.FachbegriffItem;
-import at.tgm.server.ServerSchuelerClient;
+import at.tgm.server.ServerClient;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -53,10 +52,8 @@ public class C2SPOSTQuizResults implements Packet {
 
     @Override
     public void handle(NetworkContext ctx) {
-
-        ServerSchuelerClient sc = (ServerSchuelerClient) ctx;
-
-        sc.finishQuiz(fachbegriffItems);
-
+        if (ctx instanceof ServerClient) {
+            ((ServerClient) ctx).finishQuiz(fachbegriffItems);
+        }
     }
 }

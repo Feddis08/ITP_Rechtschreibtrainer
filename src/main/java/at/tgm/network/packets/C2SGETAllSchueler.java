@@ -4,8 +4,7 @@ import at.tgm.network.core.NetworkContext;
 import at.tgm.network.core.Packet;
 import at.tgm.network.core.SocketClient;
 import at.tgm.objects.Lehrer;
-import at.tgm.server.ServerLehrerClient;
-import at.tgm.server.ServerSchuelerClient;
+import at.tgm.server.ServerClient;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -27,9 +26,9 @@ public class C2SGETAllSchueler implements Packet {
 
          SocketClient sc = ((SocketClient) ctx);
 
-         if (sc.getNutzer() instanceof Lehrer){
+         if (sc instanceof ServerClient && sc.getNutzer() instanceof Lehrer){
              try {
-                 ((ServerLehrerClient) ctx).postAllSchueler();
+                 ((ServerClient) sc).postAllSchueler();
              } catch (IOException e) {
                  throw new RuntimeException(e);
              }

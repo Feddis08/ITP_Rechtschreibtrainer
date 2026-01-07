@@ -1,35 +1,38 @@
 package at.tgm.server;
 
-import at.tgm.network.core.SocketClient;
 import at.tgm.network.packets.S2CPOSTQuiz;
 import at.tgm.network.packets.S2CPOSTStats;
 import at.tgm.network.packets.S2CResultOfQuiz;
-import at.tgm.objects.Distro;
 import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Quiz;
 import at.tgm.objects.Schueler;
 
 import java.io.IOException;
-import java.net.Socket;
 
-public class ServerSchuelerClient extends ServerClient {
+/**
+ * State für authentifizierte Schüler-Clients.
+ * Implementiert Schüler-spezifische Funktionalität.
+ */
+public class SchuelerState implements ClientState {
 
-    public ServerSchuelerClient(Socket socket) throws IOException {
-        super(socket);
+    @Override
+    public void postAllSchueler(ServerClient client) throws IOException {
+        throw new UnsupportedOperationException("Schüler können keine Schülerliste abrufen");
     }
 
     /**
      * Fügt ein Quiz dauerhaft zum Schüler hinzu.
      */
-    public void addQuiz(Quiz q) {
+    @Override
+    public void addQuiz(ServerClient client, Quiz q) {
         if (q == null) return;
 
-        Schueler s = (Schueler) this.getNutzer();
+        Schueler s = (Schueler) client.getNutzer();
         Quiz[] quizzes = s.getQuizzes();
 
         if (quizzes == null) {
             // Erstes Quiz überhaupt
-            s.setQuizzes(new Quiz[]{ q });
+            s.setQuizzes(new Quiz[]{q});
             return;
         }
 
@@ -37,28 +40,28 @@ public class ServerSchuelerClient extends ServerClient {
         System.arraycopy(quizzes, 0, newArr, 0, quizzes.length);
         newArr[quizzes.length] = q;
 
-        s.setQuizzes(newArr);  // ← WICHTIG! Sonst wird NICHTS gespeichert
+        s.setQuizzes(newArr);
     }
-
 
     /**
      * Startet ein neues Quiz.
      */
-    public void startQuiz() throws IOException {
-        System.out.println("Quiz started for: " + this.getNutzer().getUsername());
+    @Override
+    public void startQuiz(ServerClient client) throws IOException {
+        System.out.println("Quiz started for: " + client.getNutzer().getUsername());
 
         Quiz quiz = new Quiz(10, System.currentTimeMillis());
-        ((Schueler) this.getNutzer()).setQuiz(quiz);
+        ((Schueler) client.getNutzer()).setQuiz(quiz);
 
-        this.send(new S2CPOSTQuiz(quiz.getCensoredItems()));
+        client.send(new S2CPOSTQuiz(quiz.getCensoredItems()));
     }
 
     /**
      * Bewertet das Quiz, vergibt Punkte und speichert es.
      */
-    public void finishQuiz(FachbegriffItem[] fgs) {
-
-        Schueler s = (Schueler) this.getNutzer();
+    @Override
+    public void finishQuiz(ServerClient client, FachbegriffItem[] fgs) {
+        Schueler s = (Schueler) client.getNutzer();
         Quiz quiz = s.getQuiz();
 
         if (quiz == null) {
@@ -72,7 +75,6 @@ public class ServerSchuelerClient extends ServerClient {
         FachbegriffItem[] correctItems = quiz.getItems();
 
         for (int i = 0; i < fgs.length; i++) {
-
             FachbegriffItem rightOne = correctItems[i];
             FachbegriffItem userOne = fgs[i];
 
@@ -106,12 +108,29 @@ public class ServerSchuelerClient extends ServerClient {
         quiz.setMaxPoints(maxPoints);
         quiz.setTimeEnded(System.currentTimeMillis());
 
-        addQuiz(quiz);        // ← jetzt speichert es auch wirklich
-
-        s.setQuiz(null);      // Quiz als "abgeschlossen" entfernen
+        addQuiz(client, quiz);        // Quiz speichern
+        s.setQuiz(null);              // Quiz als "abgeschlossen" entfernen
 
         try {
-            this.send(new S2CResultOfQuiz(fgs, totalPoints, maxPoints));
+            client.send(new S2CResultOfQuiz(fgs, totalPoints, maxPoints));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Sendet alle bisherigen Quizzes des Schülers.
+     */
+    @Override
+    public void postStats(ServerClient client) {
+        Schueler s = (Schueler) client.getNutzer();
+        Quiz[] quizzes = s.getQuizzes();
+
+        if (quizzes == null)
+            quizzes = new Quiz[0];
+
+        try {
+            client.send(new S2CPOSTStats(quizzes));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -119,22 +138,5 @@ public class ServerSchuelerClient extends ServerClient {
 
     private String safe(String s) {
         return s == null ? "" : s.trim();
-    }
-
-    /**
-     * Sendet alle bisherigen Quizzes des Schülers.
-     */
-    public void postStats() {
-        Schueler s = (Schueler) this.getNutzer();
-        Quiz[] quizzes = s.getQuizzes();
-
-        if (quizzes == null)
-            quizzes = new Quiz[0];
-
-        try {
-            this.send(new S2CPOSTStats(quizzes));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }
