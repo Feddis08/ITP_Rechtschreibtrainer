@@ -7,6 +7,8 @@ import at.tgm.objects.Quiz;
 import at.tgm.objects.Schueler;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * State für authentifizierte Lehrer-Clients.
@@ -16,25 +18,22 @@ public class LehrerState implements ClientState {
 
     @Override
     public void postAllSchueler(ServerClient client) throws IOException {
-        // Zuerst zählen, wie viele Schüler es gibt
-        int schuelerCount = 0;
-        for (Nutzer nutzer : Server.nutzers) {
-            if (nutzer instanceof Schueler) {
-                schuelerCount++;
+        if (client == null) {
+            throw new IllegalArgumentException("Client darf nicht null sein");
+        }
+
+        // Sammle alle Schüler in einem Array (effizienter als doppelte Iteration)
+        List<Schueler> schuelerList = new ArrayList<>();
+        if (Server.nutzers != null) {
+            for (Nutzer nutzer : Server.nutzers) {
+                if (nutzer instanceof Schueler) {
+                    schuelerList.add((Schueler) nutzer);
+                }
             }
         }
 
-        // Array mit der richtigen Größe erstellen
-        Schueler[] s = new Schueler[schuelerCount];
-        int i = 0;
-        for (Nutzer nutzer : Server.nutzers) {
-            if (nutzer instanceof Schueler) {
-                s[i] = (Schueler) nutzer;
-                i++;
-            }
-        }
-
-        S2CPOSTAllSchueler packet = new S2CPOSTAllSchueler(s);
+        Schueler[] schuelerArray = schuelerList.toArray(new Schueler[0]);
+        S2CPOSTAllSchueler packet = new S2CPOSTAllSchueler(schuelerArray);
         client.send(packet);
     }
 

@@ -61,6 +61,13 @@ public class SchuelerState implements ClientState {
      */
     @Override
     public void finishQuiz(ServerClient client, FachbegriffItem[] fgs) {
+        if (client == null) {
+            throw new IllegalArgumentException("Client darf nicht null sein");
+        }
+        if (fgs == null) {
+            throw new IllegalArgumentException("FachbegriffItem-Array darf nicht null sein");
+        }
+
         Schueler s = (Schueler) client.getNutzer();
         Quiz quiz = s.getQuiz();
 
@@ -69,14 +76,29 @@ public class SchuelerState implements ClientState {
             return;
         }
 
+        FachbegriffItem[] correctItems = quiz.getItems();
+        if (correctItems == null) {
+            System.err.println("WARN: Quiz hat keine Items!");
+            return;
+        }
+
+        // Validierung: Arrays müssen die gleiche Länge haben
+        if (fgs.length != correctItems.length) {
+            System.err.println("WARN: Ungleiche Array-Längen! Erwartet: " + correctItems.length + ", Erhalten: " + fgs.length);
+            return;
+        }
+
         int totalPoints = 0;
         int maxPoints = 0;
-
-        FachbegriffItem[] correctItems = quiz.getItems();
 
         for (int i = 0; i < fgs.length; i++) {
             FachbegriffItem rightOne = correctItems[i];
             FachbegriffItem userOne = fgs[i];
+            
+            if (rightOne == null || userOne == null) {
+                System.err.println("WARN: Null-Item an Index " + i);
+                continue;
+            }
 
             String correct = safe(rightOne.getWord());
             String user = safe(userOne.getWord());
@@ -114,7 +136,9 @@ public class SchuelerState implements ClientState {
         try {
             client.send(new S2CResultOfQuiz(fgs, totalPoints, maxPoints));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.err.println("Fehler beim Senden des Quiz-Ergebnisses: " + e.getMessage());
+            e.printStackTrace();
+            // IOException wird nicht weitergeworfen, da die Methode keine IOException deklariert
         }
     }
 
@@ -123,6 +147,10 @@ public class SchuelerState implements ClientState {
      */
     @Override
     public void postStats(ServerClient client) {
+        if (client == null) {
+            throw new IllegalArgumentException("Client darf nicht null sein");
+        }
+
         Schueler s = (Schueler) client.getNutzer();
         Quiz[] quizzes = s.getQuizzes();
 
@@ -132,7 +160,9 @@ public class SchuelerState implements ClientState {
         try {
             client.send(new S2CPOSTStats(quizzes));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.err.println("Fehler beim Senden der Statistiken: " + e.getMessage());
+            e.printStackTrace();
+            // IOException wird nicht weitergeworfen, da die Methode keine IOException deklariert
         }
     }
 

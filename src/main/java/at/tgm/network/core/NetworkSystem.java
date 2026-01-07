@@ -14,10 +14,10 @@ public class NetworkSystem {
         PacketRegistry.registerPacket(S2CPOSTQuiz.class); //5
         PacketRegistry.registerPacket(C2SPOSTQuizResults.class); //6
         PacketRegistry.registerPacket(S2CResultOfQuiz.class); //7
-        PacketRegistry.registerPacket(S2CPOSTQuiz.class); //8
-        PacketRegistry.registerPacket(C2SGETStats.class); //9
-        PacketRegistry.registerPacket(S2CPOSTStats.class); //10
-        PacketRegistry.registerPacket(C2SGETAllSchueler.class); //11
-        PacketRegistry.registerPacket(S2CPOSTAllSchueler.class); //12
+        // Packet ID 8 war ein Duplikat von S2CPOSTQuiz - entfernt
+        PacketRegistry.registerPacket(C2SGETStats.class); //8
+        PacketRegistry.registerPacket(S2CPOSTStats.class); //9
+        PacketRegistry.registerPacket(C2SGETAllSchueler.class); //10
+        PacketRegistry.registerPacket(S2CPOSTAllSchueler.class); //11
     }
 }

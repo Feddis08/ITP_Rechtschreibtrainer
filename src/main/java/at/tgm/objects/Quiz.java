@@ -58,6 +58,12 @@ public class Quiz extends SendableObject{
     }
 
     public void getRandomItems(FachbegriffItem[] items){
+        if (items == null) {
+            throw new IllegalArgumentException("Items-Array darf nicht null sein");
+        }
+        if (items.length < 10) {
+            throw new IllegalArgumentException("Items-Array muss mindestens 10 Elemente haben, hat aber nur " + items.length);
+        }
 
         //some logic
 
@@ -136,11 +142,16 @@ public class Quiz extends SendableObject{
     }
 
     public FachbegriffItem[] getCensoredItems(){
+        if (items == null) {
+            return new FachbegriffItem[0];
+        }
 
         FachbegriffItem[] fs = new FachbegriffItem[items.length];
         int i = 0;
         for (FachbegriffItem f : items){
-            fs[i] = f.buildCensoredItem();
+            if (f != null) {
+                fs[i] = f.buildCensoredItem();
+            }
             i++;
         }
         return fs;

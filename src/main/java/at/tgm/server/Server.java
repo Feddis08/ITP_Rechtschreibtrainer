@@ -63,32 +63,35 @@ public class Server {
         ServerNetworkController.start(port);
     }
     public static Nutzer findNutzerByUsername(String username){
+        if (username == null) {
+            return null;
+        }
 
         for (Nutzer n : Server.nutzers){
-            if (n != null && n.getUsername().equals(username)) return n;
+            if (n != null && username.equals(n.getUsername())) {
+                return n;
+            }
         }
         return null;
     }
 
     public static void addNutzer(Nutzer nutzer){
-        int i = 0;
-        for (Nutzer n : nutzers){
-            if (n == null){
+        if (nutzer == null) {
+            throw new IllegalArgumentException("Nutzer darf nicht null sein");
+        }
+
+        // Suche nach freiem Platz im Array
+        for (int i = 0; i < nutzers.length; i++) {
+            if (nutzers[i] == null) {
                 nutzers[i] = nutzer;
                 return;
             }
-            i ++;
         }
 
-        i++;
-        Nutzer[] nutzersNeu = new Nutzer[i];
-        i = 0;
-        for (Nutzer n : nutzers){
-            nutzersNeu[i] = nutzers[i];
-            i ++;
-        }
-
-        nutzersNeu[i] = nutzer;
+        // Kein freier Platz gefunden - Array vergrößern
+        Nutzer[] nutzersNeu = new Nutzer[nutzers.length + 1];
+        System.arraycopy(nutzers, 0, nutzersNeu, 0, nutzers.length);
+        nutzersNeu[nutzers.length] = nutzer;
         nutzers = nutzersNeu;
     }
 }

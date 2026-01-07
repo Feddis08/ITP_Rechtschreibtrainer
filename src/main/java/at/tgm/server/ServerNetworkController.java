@@ -57,28 +57,25 @@ public class ServerNetworkController {
 
 
     public static void addClient(SocketClient client){
+        if (client == null) {
+            throw new IllegalArgumentException("Client darf nicht null sein");
+        }
 
-            System.out.println("adding new client");
+        System.out.println("adding new client");
 
-            int i = 0;
-            for (SocketClient c : clients){
-                if (c == null){
-                    clients[i] = client;
-                    return;
-                }
-                i ++;
+        // Suche nach freiem Platz im Array
+        for (int i = 0; i < clients.length; i++) {
+            if (clients[i] == null) {
+                clients[i] = client;
+                return;
             }
+        }
 
-            i++;
-            SocketClient[] clientsNeu = new SocketClient[i];
-            i = 0;
-            for (SocketClient c : clients){
-                clientsNeu[i] = clients[i];
-                i ++;
-            }
-
-            clientsNeu[i] = client;
-            clients = clientsNeu;
+        // Kein freier Platz gefunden - Array vergrößern
+        SocketClient[] clientsNeu = new SocketClient[clients.length + 1];
+        System.arraycopy(clients, 0, clientsNeu, 0, clients.length);
+        clientsNeu[clients.length] = client;
+        clients = clientsNeu;
     }
 
 

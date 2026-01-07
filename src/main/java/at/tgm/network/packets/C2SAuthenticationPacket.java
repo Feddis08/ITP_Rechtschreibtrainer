@@ -42,8 +42,24 @@ public class C2SAuthenticationPacket implements Packet {
 
     @Override
     public void handle(NetworkContext ctx) {
-        SocketClient client = (SocketClient) ctx;
+        if (ctx == null) {
+            System.err.println("WARN: NetworkContext ist null in C2SAuthenticationPacket");
+            return;
+        }
 
+        if (this.username == null || this.username.isEmpty()) {
+            System.err.println("WARN: Username ist null oder leer");
+            try {
+                if (ctx instanceof SocketClient) {
+                    ((SocketClient) ctx).send(new S2CLoginFailedPacket());
+                }
+            } catch (IOException e) {
+                System.err.println("Fehler beim Senden des Login-Failed-Packets: " + e.getMessage());
+            }
+            return;
+        }
+
+        SocketClient client = (SocketClient) ctx;
         Nutzer n = Server.findNutzerByUsername(this.username);
 
         System.out.println("Neue Anmeldung: " + this.username);
@@ -59,26 +75,29 @@ public class C2SAuthenticationPacket implements Packet {
                         serverClient.setState(new SchuelerState());
                     } else if (n instanceof Lehrer) {
                         serverClient.setState(new LehrerState());
+                    } else {
+                        System.err.println("WARN: Unbekannter Nutzertyp: " + n.getClass().getName());
+                        client.send(new S2CLoginFailedPacket());
+                        return;
                     }
                     
                     serverClient.setNutzer(n);
                     serverClient.send(new S2CLoginPacket(n));
 
-                    System.out.println("Login Packet");
+                    System.out.println("Login erfolgreich für: " + this.username);
                 } else {
                     client.send(new S2CLoginFailedPacket());
                     System.out.println("Invalid client type");
                 }
 
-            }else{
-               client.send(new S2CLoginFailedPacket());
-                System.out.println("Failed Packet");
+            } else {
+                client.send(new S2CLoginFailedPacket());
+                System.out.println("Login fehlgeschlagen für: " + this.username);
             }
         } catch (IOException e) {
+            System.err.println("Fehler während der Authentifizierung: " + e.getMessage());
             e.printStackTrace();
-            throw new RuntimeException(e);
+            // IOException wird nicht weitergeworfen, da handle() keine IOException deklariert
         }
-
-
     }
 }
