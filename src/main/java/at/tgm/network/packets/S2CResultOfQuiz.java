@@ -68,12 +68,15 @@ public class S2CResultOfQuiz implements Packet {
     public void handle(NetworkContext ctx) {
         logger.info("Quiz-Ergebnis empfangen: {}/{} Punkte ({} Items)", points, maxPoints, 
                    fgs != null ? fgs.length : 0);
+        
+        // Use Client callback for test mode
+        Client.onQuizResult(fgs, points, maxPoints);
+        
+        // Also try to show in GUI if available (for normal operation)
         SwingUtilities.invokeLater(() -> {
             if (Client.dashboardFrame != null && Client.dashboardFrame.getQuizPanel() != null) {
                 Client.dashboardFrame.getQuizPanel().showResults(fgs, points, maxPoints);
                 logger.debug("Quiz-Ergebnis im UI angezeigt");
-            } else {
-                logger.warn("DashboardFrame oder QuizPanel nicht verfügbar für Ergebnis-Anzeige");
             }
         });
     }

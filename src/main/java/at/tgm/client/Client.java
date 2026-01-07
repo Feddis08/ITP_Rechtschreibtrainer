@@ -39,6 +39,8 @@ public class Client {
 
     // Test callback interface - allows tests to intercept login events without GUI
     private static TestLoginCallback testCallback = null;
+    private static TestQuizCallback testQuizCallback = null;
+    private static TestSchuelerListCallback testSchuelerListCallback = null;
     
     /**
      * Sets a test callback for headless testing. Should only be used in test code.
@@ -48,9 +50,26 @@ public class Client {
         testCallback = callback;
     }
     
+    public static void setTestQuizCallback(TestQuizCallback callback) {
+        testQuizCallback = callback;
+    }
+    
+    public static void setTestSchuelerListCallback(TestSchuelerListCallback callback) {
+        testSchuelerListCallback = callback;
+    }
+    
     public interface TestLoginCallback {
         void onLogin(Nutzer n);
         void onLoginFailed();
+    }
+    
+    public interface TestQuizCallback {
+        void onQuizStarted(at.tgm.objects.FachbegriffItem[] items);
+        void onQuizResult(at.tgm.objects.FachbegriffItem[] items, int points, int maxPoints);
+    }
+    
+    public interface TestSchuelerListCallback {
+        void onSchuelerListReceived(at.tgm.objects.Schueler[] schueler);
     }
 
     // Wird vom Netzwerkcode aufgerufen
@@ -83,7 +102,43 @@ public class Client {
     // Wird vom Netzwerkcode aufgerufen, sobald Fachbegriffe fürs Quiz da sind
     public static void startQuiz(FachbegriffItem[] items) {
         logger.info("Quiz gestartet mit {} Items", items != null ? items.length : 0);
+        
+        // If in test mode, route to test callback instead of GUI
+        if (testQuizCallback != null) {
+            testQuizCallback.onQuizStarted(items);
+            return;
+        }
+        
         GUI.showQuiz(items);
+    }
+    
+    // Wird vom Netzwerkcode aufgerufen, wenn Quiz-Ergebnis kommt
+    public static void onQuizResult(at.tgm.objects.FachbegriffItem[] items, int points, int maxPoints) {
+        logger.info("Quiz-Ergebnis erhalten: {}/{} Punkte ({} Items)", points, maxPoints, 
+                   items != null ? items.length : 0);
+        
+        // If in test mode, route to test callback instead of GUI
+        if (testQuizCallback != null) {
+            testQuizCallback.onQuizResult(items, points, maxPoints);
+            return;
+        }
+        
+        // Normalerweise würde hier die GUI aufgerufen werden, aber das machen wir über S2CResultOfQuiz
+    }
+    
+    // Wird vom Netzwerkcode aufgerufen, wenn Schülerliste kommt
+    public static void onSchuelerListReceived(at.tgm.objects.Schueler[] schueler) {
+        logger.info("Schülerliste erhalten: {} Schüler", schueler != null ? schueler.length : 0);
+        
+        // If in test mode, route to test callback instead of GUI
+        if (testSchuelerListCallback != null) {
+            testSchuelerListCallback.onSchuelerListReceived(schueler);
+            return;
+        }
+        
+        if (dashboardFrame != null) {
+            dashboardFrame.showSchuelerList(schueler);
+        }
     }
 
     // Wird vom Netzwerkcode aufgerufen, wenn die Verbindung verloren geht

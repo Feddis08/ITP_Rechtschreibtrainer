@@ -55,6 +55,6 @@ public class S2CPOSTAllSchueler implements Packet {
     @Override
     public void handle(NetworkContext ctx) {
         logger.info("Schülerliste-Paket empfangen mit {} Schülern", s != null ? s.length : 0);
-        Client.dashboardFrame.showSchuelerList(s);
+        Client.onSchuelerListReceived(s);
     }
 }
