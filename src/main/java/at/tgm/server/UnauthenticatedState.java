@@ -2,6 +2,8 @@ package at.tgm.server;
 
 import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Quiz;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -11,28 +13,40 @@ import java.io.IOException;
  */
 public class UnauthenticatedState implements ClientState {
 
+    private static final Logger logger = LoggerFactory.getLogger(UnauthenticatedState.class);
+
     @Override
     public void postAllSchueler(ServerClient client) throws IOException {
+        logger.warn("Nicht authentifizierter Client versuchte, Schülerliste abzurufen: {}", 
+                   client.getSocket().getRemoteSocketAddress());
         throw new UnsupportedOperationException("Client ist nicht authentifiziert");
     }
 
     @Override
     public void addQuiz(ServerClient client, Quiz q) {
+        logger.warn("Nicht authentifizierter Client versuchte, Quiz hinzuzufügen: {}", 
+                   client.getSocket().getRemoteSocketAddress());
         throw new UnsupportedOperationException("Client ist nicht authentifiziert");
     }
 
     @Override
     public void startQuiz(ServerClient client) throws IOException {
+        logger.warn("Nicht authentifizierter Client versuchte, Quiz zu starten: {}", 
+                   client.getSocket().getRemoteSocketAddress());
         throw new UnsupportedOperationException("Client ist nicht authentifiziert");
     }
 
     @Override
     public void finishQuiz(ServerClient client, FachbegriffItem[] fgs) {
+        logger.warn("Nicht authentifizierter Client versuchte, Quiz zu beenden: {}", 
+                   client.getSocket().getRemoteSocketAddress());
         throw new UnsupportedOperationException("Client ist nicht authentifiziert");
     }
 
     @Override
     public void postStats(ServerClient client) {
+        logger.warn("Nicht authentifizierter Client versuchte, Statistiken abzurufen: {}", 
+                   client.getSocket().getRemoteSocketAddress());
         throw new UnsupportedOperationException("Client ist nicht authentifiziert");
     }
 }

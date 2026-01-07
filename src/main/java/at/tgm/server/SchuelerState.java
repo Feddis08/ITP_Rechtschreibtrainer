@@ -6,6 +6,8 @@ import at.tgm.network.packets.S2CResultOfQuiz;
 import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Quiz;
 import at.tgm.objects.Schueler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -15,8 +17,12 @@ import java.io.IOException;
  */
 public class SchuelerState implements ClientState {
 
+    private static final Logger logger = LoggerFactory.getLogger(SchuelerState.class);
+
     @Override
     public void postAllSchueler(ServerClient client) throws IOException {
+        logger.warn("Schüler '{}' versuchte, Schülerliste abzurufen (nicht erlaubt)", 
+                    client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown");
         throw new UnsupportedOperationException("Schüler können keine Schülerliste abrufen");
     }
 
@@ -25,7 +31,10 @@ public class SchuelerState implements ClientState {
      */
     @Override
     public void addQuiz(ServerClient client, Quiz q) {
-        if (q == null) return;
+        if (q == null) {
+            logger.warn("Versuch, null-Quiz hinzuzufügen");
+            return;
+        }
 
         Schueler s = (Schueler) client.getNutzer();
         Quiz[] quizzes = s.getQuizzes();
@@ -33,6 +42,7 @@ public class SchuelerState implements ClientState {
         if (quizzes == null) {
             // Erstes Quiz überhaupt
             s.setQuizzes(new Quiz[]{q});
+            logger.info("Erstes Quiz für Schüler '{}' hinzugefügt", s.getUsername());
             return;
         }
 
@@ -41,6 +51,7 @@ public class SchuelerState implements ClientState {
         newArr[quizzes.length] = q;
 
         s.setQuizzes(newArr);
+        logger.info("Quiz für Schüler '{}' hinzugefügt (Gesamt: {})", s.getUsername(), newArr.length);
     }
 
     /**
@@ -48,12 +59,15 @@ public class SchuelerState implements ClientState {
      */
     @Override
     public void startQuiz(ServerClient client) throws IOException {
-        System.out.println("Quiz started for: " + client.getNutzer().getUsername());
+        String username = client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown";
+        logger.info("Starte Quiz für Schüler: {}", username);
 
         Quiz quiz = new Quiz(10, System.currentTimeMillis());
         ((Schueler) client.getNutzer()).setQuiz(quiz);
+        logger.debug("Quiz erstellt mit {} Items", quiz.getCensoredItems() != null ? quiz.getCensoredItems().length : 0);
 
         client.send(new S2CPOSTQuiz(quiz.getCensoredItems()));
+        logger.info("Quiz-Paket an Schüler '{}' gesendet", username);
     }
 
     /**
@@ -72,21 +86,24 @@ public class SchuelerState implements ClientState {
         Quiz quiz = s.getQuiz();
 
         if (quiz == null) {
-            System.err.println("WARN: finishQuiz() ohne aktives Quiz!");
+            logger.warn("finishQuiz() ohne aktives Quiz für Schüler '{}'", s.getUsername());
             return;
         }
 
         FachbegriffItem[] correctItems = quiz.getItems();
         if (correctItems == null) {
-            System.err.println("WARN: Quiz hat keine Items!");
+            logger.warn("Quiz hat keine Items für Schüler '{}'", s.getUsername());
             return;
         }
 
         // Validierung: Arrays müssen die gleiche Länge haben
         if (fgs.length != correctItems.length) {
-            System.err.println("WARN: Ungleiche Array-Längen! Erwartet: " + correctItems.length + ", Erhalten: " + fgs.length);
+            logger.warn("Ungleiche Array-Längen für Schüler '{}': Erwartet {}, Erhalten {}", 
+                       s.getUsername(), correctItems.length, fgs.length);
             return;
         }
+
+        logger.info("Bewerte Quiz für Schüler '{}' ({} Items)", s.getUsername(), fgs.length);
 
         int totalPoints = 0;
         int maxPoints = 0;
@@ -96,7 +113,7 @@ public class SchuelerState implements ClientState {
             FachbegriffItem userOne = fgs[i];
             
             if (rightOne == null || userOne == null) {
-                System.err.println("WARN: Null-Item an Index " + i);
+                logger.warn("Null-Item an Index {} für Schüler '{}'", i, s.getUsername());
                 continue;
             }
 
@@ -130,14 +147,16 @@ public class SchuelerState implements ClientState {
         quiz.setMaxPoints(maxPoints);
         quiz.setTimeEnded(System.currentTimeMillis());
 
+        logger.info("Quiz bewertet für Schüler '{}': {}/{} Punkte", s.getUsername(), totalPoints, maxPoints);
+
         addQuiz(client, quiz);        // Quiz speichern
         s.setQuiz(null);              // Quiz als "abgeschlossen" entfernen
 
         try {
             client.send(new S2CResultOfQuiz(fgs, totalPoints, maxPoints));
+            logger.debug("Quiz-Ergebnis an Schüler '{}' gesendet", s.getUsername());
         } catch (IOException e) {
-            System.err.println("Fehler beim Senden des Quiz-Ergebnisses: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Fehler beim Senden des Quiz-Ergebnisses an Schüler '{}'", s.getUsername(), e);
             // IOException wird nicht weitergeworfen, da die Methode keine IOException deklariert
         }
     }
@@ -157,11 +176,13 @@ public class SchuelerState implements ClientState {
         if (quizzes == null)
             quizzes = new Quiz[0];
 
+        logger.info("Sende Statistiken an Schüler '{}' ({} Quizzes)", s.getUsername(), quizzes.length);
+
         try {
             client.send(new S2CPOSTStats(quizzes));
+            logger.debug("Statistiken erfolgreich an Schüler '{}' gesendet", s.getUsername());
         } catch (IOException e) {
-            System.err.println("Fehler beim Senden der Statistiken: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Fehler beim Senden der Statistiken an Schüler '{}'", s.getUsername(), e);
             // IOException wird nicht weitergeworfen, da die Methode keine IOException deklariert
         }
     }

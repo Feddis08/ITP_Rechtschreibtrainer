@@ -5,12 +5,16 @@ import at.tgm.network.core.NetworkContext;
 import at.tgm.network.core.Packet;
 import at.tgm.objects.Nutzer;
 import at.tgm.objects.SendableObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class S2CLoginPacket implements Packet {
+
+    private static final Logger logger = LoggerFactory.getLogger(S2CLoginPacket.class);
 
     private Nutzer n;
 
@@ -32,7 +36,8 @@ public class S2CLoginPacket implements Packet {
 
     @Override
     public void handle(NetworkContext ctx) {
-
+        String username = n != null ? n.getUsername() : "unknown";
+        logger.info("Login-Paket empfangen für: {}", username);
         Client.login(n);
     }
 }

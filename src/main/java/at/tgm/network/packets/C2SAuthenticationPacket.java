@@ -10,6 +10,8 @@ import at.tgm.network.core.SocketClient;
 import at.tgm.server.LehrerState;
 import at.tgm.server.SchuelerState;
 import at.tgm.server.ServerClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -17,6 +19,8 @@ import java.io.IOException;
 
 
 public class C2SAuthenticationPacket implements Packet {
+
+    private static final Logger logger = LoggerFactory.getLogger(C2SAuthenticationPacket.class);
 
     private String username;
     private String password;
@@ -43,18 +47,18 @@ public class C2SAuthenticationPacket implements Packet {
     @Override
     public void handle(NetworkContext ctx) {
         if (ctx == null) {
-            System.err.println("WARN: NetworkContext ist null in C2SAuthenticationPacket");
+            logger.error("NetworkContext ist null in C2SAuthenticationPacket");
             return;
         }
 
         if (this.username == null || this.username.isEmpty()) {
-            System.err.println("WARN: Username ist null oder leer");
+            logger.warn("Authentifizierungsversuch mit leerem oder null Username");
             try {
                 if (ctx instanceof SocketClient) {
                     ((SocketClient) ctx).send(new S2CLoginFailedPacket());
                 }
             } catch (IOException e) {
-                System.err.println("Fehler beim Senden des Login-Failed-Packets: " + e.getMessage());
+                logger.error("Fehler beim Senden des Login-Failed-Pakets", e);
             }
             return;
         }
@@ -62,7 +66,7 @@ public class C2SAuthenticationPacket implements Packet {
         SocketClient client = (SocketClient) ctx;
         Nutzer n = Server.findNutzerByUsername(this.username);
 
-        System.out.println("Neue Anmeldung: " + this.username);
+        logger.info("Neue Anmeldung: {}", this.username);
         try {
             if (n != null && n.checkPassword(this.password)){
 
@@ -73,10 +77,12 @@ public class C2SAuthenticationPacket implements Packet {
                     // State basierend auf Nutzertyp setzen
                     if (n instanceof Schueler) {
                         serverClient.setState(new SchuelerState());
+                        logger.debug("SchuelerState gesetzt für: {}", this.username);
                     } else if (n instanceof Lehrer) {
                         serverClient.setState(new LehrerState());
+                        logger.debug("LehrerState gesetzt für: {}", this.username);
                     } else {
-                        System.err.println("WARN: Unbekannter Nutzertyp: " + n.getClass().getName());
+                        logger.warn("Unbekannter Nutzertyp: {} für Benutzer: {}", n.getClass().getName(), this.username);
                         client.send(new S2CLoginFailedPacket());
                         return;
                     }
@@ -84,19 +90,18 @@ public class C2SAuthenticationPacket implements Packet {
                     serverClient.setNutzer(n);
                     serverClient.send(new S2CLoginPacket(n));
 
-                    System.out.println("Login erfolgreich für: " + this.username);
+                    logger.info("Login erfolgreich für: {} (Typ: {})", this.username, n.getClass().getSimpleName());
                 } else {
+                    logger.warn("Invalid client type für Authentifizierung: {}", client.getClass().getSimpleName());
                     client.send(new S2CLoginFailedPacket());
-                    System.out.println("Invalid client type");
                 }
 
             } else {
+                logger.warn("Login fehlgeschlagen für: {} (Benutzer nicht gefunden oder falsches Passwort)", this.username);
                 client.send(new S2CLoginFailedPacket());
-                System.out.println("Login fehlgeschlagen für: " + this.username);
             }
         } catch (IOException e) {
-            System.err.println("Fehler während der Authentifizierung: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Fehler während der Authentifizierung für: {}", this.username, e);
             // IOException wird nicht weitergeworfen, da handle() keine IOException deklariert
         }
     }

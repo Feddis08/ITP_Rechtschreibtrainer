@@ -1,6 +1,12 @@
 plugins {
     id 'java'
-    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 group 'at.tgm'
@@ -22,6 +28,10 @@ dependencies {
 
     implementation 'org.lz4:lz4-java:1.8.0'
 
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+    implementation 'ch.qos.logback:logback-classic:1.4.11'
+
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 }
@@ -29,4 +39,27 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+// Helper task to print classpath (for debugging)
+task printClasspath {
+    doLast {
+        println sourceSets.main.runtimeClasspath.asPath
+    }
+}
+
+// Task zum Starten des Clients
+task runClient(type: JavaExec) {
+    group = 'application'
+    description = 'Startet den Client'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'at.tgm.client.Client'
+}
+
+// Task zum Starten des Servers
+task runServer(type: JavaExec) {
+    group = 'application'
+    description = 'Startet den Server'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'at.tgm.server.Server'
 }

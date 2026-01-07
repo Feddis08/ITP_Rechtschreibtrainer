@@ -4,12 +4,16 @@ import at.tgm.network.core.NetworkContext;
 import at.tgm.network.core.Packet;
 import at.tgm.objects.FachbegriffItem;
 import at.tgm.server.ServerClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class C2SPOSTQuizResults implements Packet {
+
+    private static final Logger logger = LoggerFactory.getLogger(C2SPOSTQuizResults.class);
 
     private FachbegriffItem[] fachbegriffItems;
 
@@ -53,7 +57,13 @@ public class C2SPOSTQuizResults implements Packet {
     @Override
     public void handle(NetworkContext ctx) {
         if (ctx instanceof ServerClient) {
+            ServerClient serverClient = (ServerClient) ctx;
+            String username = serverClient.getNutzer() != null ? serverClient.getNutzer().getUsername() : "unknown";
+            logger.info("Quiz-Ergebnisse empfangen von: {} ({} Items)", username, 
+                       fachbegriffItems != null ? fachbegriffItems.length : 0);
             ((ServerClient) ctx).finishQuiz(fachbegriffItems);
+        } else {
+            logger.warn("Quiz-Ergebnisse von nicht-ServerClient empfangen: {}", ctx.getClass().getSimpleName());
         }
     }
 }

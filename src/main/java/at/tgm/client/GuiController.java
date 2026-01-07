@@ -8,41 +8,53 @@ import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Nutzer;
 import at.tgm.objects.Quiz;
 import at.tgm.objects.Schueler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 public class GuiController {
+
+    private static final Logger logger = LoggerFactory.getLogger(GuiController.class);
 
     private AnmeldeController anmeldeController;
     private DashboardFrame dashboardFrame;
     private Nutzer currentNutzer;
 
     public void showLogin() {
+        logger.debug("Zeige Login-Fenster");
         if (anmeldeController == null) {
             anmeldeController = new AnmeldeController();
             Client.ac = anmeldeController; // für bestehenden Code
+            logger.debug("Neuer AnmeldeController erstellt");
         } else {
             anmeldeController.show();
+            logger.debug("Bestehender AnmeldeController angezeigt");
         }
     }
 
     public void loginSuccessful(Nutzer nutzer) {
+        logger.info("Login erfolgreich, zeige Dashboard für: {}", nutzer != null ? nutzer.getUsername() : "unknown");
         this.currentNutzer = nutzer;
 
         if (anmeldeController != null) {
             anmeldeController.hide();
+            logger.debug("Login-Fenster verborgen");
         }
 
         if (dashboardFrame == null) {
             dashboardFrame = new DashboardFrame(nutzer, this);
             Client.dashboardFrame = dashboardFrame; // falls irgendwo genutzt
+            logger.debug("Neues Dashboard-Fenster erstellt");
         } else {
             dashboardFrame.setNutzer(nutzer);
             dashboardFrame.setVisible(true);
+            logger.debug("Bestehendes Dashboard-Fenster aktualisiert und angezeigt");
         }
     }
 
     public void loginFailed(String title, String msg) {
+        logger.warn("Login fehlgeschlagen: {} - {}", title, msg);
         if (anmeldeController != null) {
             anmeldeController.showError(title, msg);
         }
@@ -50,26 +62,32 @@ public class GuiController {
 
     // Wird vom Dashboard aufgerufen, wenn der Benutzer im Menü "Quiz starten" klickt
     public void onQuizMenuClicked() {
+        logger.info("Quiz-Menü geklickt, sende Quiz-Initialisierungs-Paket");
         try {
             C2SINITQuiz packet = new C2SINITQuiz();
             ClientNetworkController.socketClient.send(packet);
+            logger.debug("Quiz-Initialisierungs-Paket gesendet");
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Fehler beim Senden des Quiz-Initialisierungs-Pakets", e);
         }
     }
     public void showStats(Quiz[] quizzes) {
+        logger.info("Zeige Statistiken ({} Quizzes)", quizzes != null ? quizzes.length : 0);
         if (dashboardFrame != null) {
             dashboardFrame.showStats(quizzes);
         }
     }
     // Lehrer klickt im Menü auf "Schüler"
     public void onSchuelerMenuClicked() throws IOException {
+        logger.info("Schüler-Menü geklickt, sende Anfrage für Schülerliste");
         C2SGETAllSchueler packet = new C2SGETAllSchueler();
         ClientNetworkController.socketClient.send(packet);
+        logger.debug("Schülerliste-Anfrage gesendet");
     }
 
     // Wird vom Netzwerkcode aufgerufen, wenn die Schülerliste ankommt
     public void showSchuelerList(Schueler[] schueler) {
+        logger.info("Schülerliste erhalten ({} Schüler)", schueler != null ? schueler.length : 0);
         if (dashboardFrame != null) {
             dashboardFrame.showSchuelerList(schueler);
         }
@@ -78,12 +96,14 @@ public class GuiController {
 
     // Wird vom Netzwerkcode aufgerufen, sobald die Fachbegriffe angekommen sind
     public void showQuiz(FachbegriffItem[] items) {
+        logger.info("Quiz-Items erhalten ({} Items), zeige Quiz-Fenster", items != null ? items.length : 0);
         if (dashboardFrame != null) {
             dashboardFrame.showQuiz(items);
         }
     }
 
     public void showProfile() {
+        logger.debug("Zeige Profil");
         if (dashboardFrame != null) {
             dashboardFrame.showProfile();
         }

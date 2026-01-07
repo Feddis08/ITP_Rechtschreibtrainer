@@ -6,12 +6,16 @@ import at.tgm.network.core.NetworkContext;
 import at.tgm.network.core.Packet;
 import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Quiz;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class S2CPOSTStats implements Packet {
+
+    private static final Logger logger = LoggerFactory.getLogger(S2CPOSTStats.class);
 
     private Quiz[] quizzes;
 
@@ -53,6 +57,7 @@ public class S2CPOSTStats implements Packet {
 
     @Override
     public void handle(NetworkContext ctx) {
+        logger.info("Statistik-Paket empfangen mit {} Quizzes", quizzes != null ? quizzes.length : 0);
         Client.GUI.showStats(quizzes);
     }
 }
