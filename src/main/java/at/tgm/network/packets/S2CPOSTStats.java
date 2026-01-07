@@ -4,7 +4,6 @@ import at.tgm.client.Client;
 import at.tgm.client.GuiController;
 import at.tgm.network.core.NetworkContext;
 import at.tgm.network.core.Packet;
-import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Quiz;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +50,7 @@ public class S2CPOSTStats implements Packet {
 
         // Items einlesen
         for (int i = 0; i < size; i++) {
-            quizzes[i] = FachbegriffItem.decode(in);
+            quizzes[i] = Quiz.decode(in);
         }
     }
 

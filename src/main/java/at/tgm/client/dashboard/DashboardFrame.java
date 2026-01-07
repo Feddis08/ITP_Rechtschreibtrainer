@@ -82,10 +82,17 @@ public class DashboardFrame extends JFrame {
     }
 
     public void showQuizResults(FachbegriffItem[] correctedItems, int points, int maxPoints) {
-        if (quizPanel != null) {
-            quizPanel.showResults(correctedItems, points, maxPoints);
-            showCard("QUIZ"); // sicherstellen, dass die Quiz-Card sichtbar ist
+        // Erstelle QuizPanel falls es noch nicht existiert (z.B. nach neuem Login)
+        if (quizPanel == null) {
+            // Erstelle ein leeres QuizPanel - wir brauchen nur die showResults-Funktionalität
+            quizPanel = new QuizPanel(new FachbegriffItem[0]);
+            contentPanel.add(quizPanel, "QUIZ");
         }
+        
+        quizPanel.showResults(correctedItems, points, maxPoints);
+        showCard("QUIZ"); // sicherstellen, dass die Quiz-Card sichtbar ist
+        contentPanel.revalidate();
+        contentPanel.repaint();
     }
 
     public DashboardFrame(Nutzer nutzer, GuiController controller) {

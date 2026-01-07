@@ -1,6 +1,7 @@
 package at.tgm.client.dashboard;
 
 
+import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Quiz;
 
 import javax.swing.*;
@@ -84,10 +85,14 @@ public class StatsPanel extends JPanel {
         panel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-
                 // Quiz-Ergebnis wie bei "Finish"
+                FachbegriffItem[] userItems = q.getUserItems();
+                if (userItems == null) {
+                    // Fallback: Wenn userItems null ist, zeige zumindest eine leere Liste
+                    userItems = new FachbegriffItem[0];
+                }
                 parent.showQuizResults(
-                        q.getUserItems(),
+                        userItems,
                         q.getPoints(),
                         q.getMaxPoints()
                 );
