@@ -35,9 +35,9 @@ public class ServerClient extends SocketClient {
 
     // Delegationsmethoden für rollenspezifische Funktionalität
 
-    public void postAllSchueler() throws IOException {
-        logger.debug("postAllSchueler() aufgerufen");
-        state.postAllSchueler(this);
+    public void postAllSchueler(long requestId) throws IOException {
+        logger.debug("postAllSchueler() aufgerufen mit Request-ID: {}", requestId);
+        state.postAllSchueler(this, requestId);
     }
 
     public void addQuiz(Quiz q) {

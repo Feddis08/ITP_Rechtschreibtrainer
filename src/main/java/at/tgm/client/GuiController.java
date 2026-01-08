@@ -4,6 +4,7 @@ import at.tgm.client.anmeldung.AnmeldeController;
 import at.tgm.client.dashboard.DashboardFrame;
 import at.tgm.network.packets.C2SGETAllSchueler;
 import at.tgm.network.packets.C2SINITQuiz;
+import at.tgm.network.packets.S2CPOSTAllSchueler;
 import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Nutzer;
 import at.tgm.objects.Quiz;
@@ -12,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class GuiController {
 
@@ -78,11 +81,57 @@ public class GuiController {
         }
     }
     // Lehrer klickt im Menü auf "Schüler"
-    public void onSchuelerMenuClicked() throws IOException {
+    public void onSchuelerMenuClicked() {
         logger.info("Schüler-Menü geklickt, sende Anfrage für Schülerliste");
-        C2SGETAllSchueler packet = new C2SGETAllSchueler();
-        ClientNetworkController.socketClient.send(packet);
-        logger.debug("Schülerliste-Anfrage gesendet");
+        
+        // In separatem Thread ausführen, um UI nicht zu blockieren
+        new Thread(() -> {
+            try {
+                C2SGETAllSchueler request = new C2SGETAllSchueler();
+                S2CPOSTAllSchueler response = ClientNetworkController.socketClient
+                    .getChannel()
+                    .sendAndWait(
+                        request,
+                        S2CPOSTAllSchueler.class,
+                        5,
+                        TimeUnit.SECONDS
+                    );
+                
+                // UI-Update im EDT (Event Dispatch Thread)
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    Schueler[] schueler = response.getSchueler();
+                    showSchuelerList(schueler);
+                });
+                
+            } catch (TimeoutException e) {
+                logger.error("Timeout beim Laden der Schülerliste", e);
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    if (dashboardFrame != null) {
+                        javax.swing.JOptionPane.showMessageDialog(
+                            dashboardFrame,
+                            "Schülerliste konnte nicht geladen werden (Timeout).",
+                            "Fehler",
+                            javax.swing.JOptionPane.ERROR_MESSAGE
+                        );
+                    }
+                });
+            } catch (IOException e) {
+                logger.error("Fehler beim Laden der Schülerliste", e);
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    if (dashboardFrame != null) {
+                        javax.swing.JOptionPane.showMessageDialog(
+                            dashboardFrame,
+                            "Fehler beim Laden der Schülerliste: " + e.getMessage(),
+                            "Fehler",
+                            javax.swing.JOptionPane.ERROR_MESSAGE
+                        );
+                    }
+                });
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.error("Unterbrochen beim Laden der Schülerliste", e);
+            }
+        }).start();
     }
 
     // Wird vom Netzwerkcode aufgerufen, wenn die Schülerliste ankommt

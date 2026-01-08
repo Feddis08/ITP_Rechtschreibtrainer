@@ -21,7 +21,7 @@ public class LehrerState implements ClientState {
     private static final Logger logger = LoggerFactory.getLogger(LehrerState.class);
 
     @Override
-    public void postAllSchueler(ServerClient client) throws IOException {
+    public void postAllSchueler(ServerClient client, long requestId) throws IOException {
         if (client == null) {
             throw new IllegalArgumentException("Client darf nicht null sein");
         }
@@ -37,10 +37,12 @@ public class LehrerState implements ClientState {
         }
 
         Schueler[] schuelerArray = schuelerList.toArray(new Schueler[0]);
-        logger.info("Sende {} Schüler an Lehrer '{}'", 
+        logger.info("Sende {} Schüler an Lehrer '{}' (Request-ID: {})", 
                    schuelerArray.length, 
-                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown");
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown",
+                   requestId);
         S2CPOSTAllSchueler packet = new S2CPOSTAllSchueler(schuelerArray);
+        packet.setRequestId(requestId); // WICHTIG: Request-ID übernehmen
         client.send(packet);
         logger.debug("Schülerliste erfolgreich gesendet");
     }

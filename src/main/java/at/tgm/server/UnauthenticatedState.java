@@ -16,9 +16,9 @@ public class UnauthenticatedState implements ClientState {
     private static final Logger logger = LoggerFactory.getLogger(UnauthenticatedState.class);
 
     @Override
-    public void postAllSchueler(ServerClient client) throws IOException {
-        logger.warn("Nicht authentifizierter Client versuchte, Schülerliste abzurufen: {}", 
-                   client.getSocket().getRemoteSocketAddress());
+    public void postAllSchueler(ServerClient client, long requestId) throws IOException {
+        logger.warn("Nicht authentifizierter Client versuchte, Schülerliste abzurufen (Request-ID: {}): {}", 
+                   requestId, client.getSocket().getRemoteSocketAddress());
         throw new UnsupportedOperationException("Client ist nicht authentifiziert");
     }
 

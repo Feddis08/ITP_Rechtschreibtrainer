@@ -302,11 +302,7 @@ public class DashboardFrame extends JFrame {
             showCard("SCHUELER_LOADING");
             if (controller != null) {
                 // Controller schickt Request an Server, Antwort: Schueler[]
-                try {
-                    controller.onSchuelerMenuClicked();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                controller.onSchuelerMenuClicked();
             }
         }));
         side.add(Box.createVerticalGlue());

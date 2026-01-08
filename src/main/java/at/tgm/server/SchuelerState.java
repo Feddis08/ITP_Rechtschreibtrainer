@@ -20,9 +20,9 @@ public class SchuelerState implements ClientState {
     private static final Logger logger = LoggerFactory.getLogger(SchuelerState.class);
 
     @Override
-    public void postAllSchueler(ServerClient client) throws IOException {
-        logger.warn("Schüler '{}' versuchte, Schülerliste abzurufen (nicht erlaubt)", 
-                    client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown");
+    public void postAllSchueler(ServerClient client, long requestId) throws IOException {
+        logger.warn("Schüler '{}' versuchte, Schülerliste abzurufen (nicht erlaubt, Request-ID: {})", 
+                    client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
         throw new UnsupportedOperationException("Schüler können keine Schülerliste abrufen");
     }
 

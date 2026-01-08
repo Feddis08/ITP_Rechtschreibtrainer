@@ -1,7 +1,7 @@
 package at.tgm.network.packets;
 
 import at.tgm.network.core.NetworkContext;
-import at.tgm.network.core.Packet;
+import at.tgm.network.core.RequestPacket;
 import at.tgm.objects.Lehrer;
 import at.tgm.objects.Nutzer;
 import at.tgm.objects.Schueler;
@@ -18,10 +18,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 
-public class C2SAuthenticationPacket implements Packet {
+public class C2SAuthenticationPacket implements RequestPacket {
 
     private static final Logger logger = LoggerFactory.getLogger(C2SAuthenticationPacket.class);
 
+    private long requestId;
     private String username;
     private String password;
     public C2SAuthenticationPacket() {
@@ -34,14 +35,26 @@ public class C2SAuthenticationPacket implements Packet {
 
     @Override
     public void encode(DataOutputStream out) throws IOException {
+        out.writeLong(requestId); // Request-ID mitsenden
         out.writeUTF(username);
         out.writeUTF(password);
     }
 
     @Override
     public void decode(DataInputStream in) throws IOException {
+        requestId = in.readLong(); // Request-ID lesen
         this.username = in.readUTF();
         this.password = in.readUTF();
+    }
+    
+    @Override
+    public long getRequestId() {
+        return requestId;
+    }
+    
+    @Override
+    public void setRequestId(long id) {
+        this.requestId = id;
     }
 
     @Override
@@ -51,11 +64,15 @@ public class C2SAuthenticationPacket implements Packet {
             return;
         }
 
+        SocketClient client = (SocketClient) ctx;
+        
         if (this.username == null || this.username.isEmpty()) {
-            logger.warn("Authentifizierungsversuch mit leerem oder null Username");
+            logger.warn("Authentifizierungsversuch mit leerem oder null Username (Request-ID: {})", requestId);
             try {
                 if (ctx instanceof SocketClient) {
-                    ((SocketClient) ctx).send(new S2CLoginFailedPacket());
+                    S2CLoginFailedPacket response = new S2CLoginFailedPacket();
+                    response.setRequestId(requestId);
+                    ((SocketClient) ctx).send(response);
                 }
             } catch (IOException e) {
                 logger.error("Fehler beim Senden des Login-Failed-Pakets", e);
@@ -63,10 +80,9 @@ public class C2SAuthenticationPacket implements Packet {
             return;
         }
 
-        SocketClient client = (SocketClient) ctx;
         Nutzer n = Server.findNutzerByUsername(this.username);
 
-        logger.info("Neue Anmeldung: {}", this.username);
+        logger.info("Neue Anmeldung: {} (Request-ID: {})", this.username, requestId);
         try {
             if (n != null && n.checkPassword(this.password)){
 
@@ -83,23 +99,31 @@ public class C2SAuthenticationPacket implements Packet {
                         logger.debug("LehrerState gesetzt für: {}", this.username);
                     } else {
                         logger.warn("Unbekannter Nutzertyp: {} für Benutzer: {}", n.getClass().getName(), this.username);
-                        client.send(new S2CLoginFailedPacket());
+                        S2CLoginFailedPacket response = new S2CLoginFailedPacket();
+                        response.setRequestId(requestId);
+                        client.send(response);
                         return;
                     }
                     
                     serverClient.setNutzer(n);
                     n.setStatus(at.tgm.objects.NutzerStatus.ONLINE);
-                    serverClient.send(new S2CLoginPacket(n));
+                    S2CLoginPacket response = new S2CLoginPacket(n);
+                    response.setRequestId(requestId); // WICHTIG: Request-ID übernehmen
+                    serverClient.send(response);
 
                     logger.info("Login erfolgreich für: {} (Typ: {}), Status auf ONLINE gesetzt", this.username, n.getClass().getSimpleName());
                 } else {
                     logger.warn("Invalid client type für Authentifizierung: {}", client.getClass().getSimpleName());
-                    client.send(new S2CLoginFailedPacket());
+                    S2CLoginFailedPacket response = new S2CLoginFailedPacket();
+                    response.setRequestId(requestId);
+                    client.send(response);
                 }
 
             } else {
                 logger.warn("Login fehlgeschlagen für: {} (Benutzer nicht gefunden oder falsches Passwort)", this.username);
-                client.send(new S2CLoginFailedPacket());
+                S2CLoginFailedPacket response = new S2CLoginFailedPacket();
+                response.setRequestId(requestId);
+                client.send(response);
             }
         } catch (IOException e) {
             logger.error("Fehler während der Authentifizierung für: {}", this.username, e);

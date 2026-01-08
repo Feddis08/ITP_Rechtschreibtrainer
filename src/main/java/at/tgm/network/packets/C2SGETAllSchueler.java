@@ -1,7 +1,7 @@
 package at.tgm.network.packets;
 
 import at.tgm.network.core.NetworkContext;
-import at.tgm.network.core.Packet;
+import at.tgm.network.core.RequestPacket;
 import at.tgm.network.core.SocketClient;
 import at.tgm.objects.Lehrer;
 import at.tgm.server.ServerClient;
@@ -12,17 +12,29 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public class C2SGETAllSchueler implements Packet {
+public class C2SGETAllSchueler implements RequestPacket {
 
     private static final Logger logger = LoggerFactory.getLogger(C2SGETAllSchueler.class);
+    private long requestId;
+    
     @Override
     public void encode(DataOutputStream out) throws IOException {
-
+        out.writeLong(requestId); // Request-ID mitsenden
     }
 
     @Override
     public void decode(DataInputStream in) throws IOException {
-
+        requestId = in.readLong(); // Request-ID lesen
+    }
+    
+    @Override
+    public long getRequestId() {
+        return requestId;
+    }
+    
+    @Override
+    public void setRequestId(long id) {
+        this.requestId = id;
     }
 
     @Override
@@ -32,9 +44,9 @@ public class C2SGETAllSchueler implements Packet {
          String username = sc.getNutzer() != null ? sc.getNutzer().getUsername() : "unknown";
 
          if (sc instanceof ServerClient && sc.getNutzer() instanceof Lehrer){
-             logger.info("Schülerliste-Anfrage von Lehrer: {}", username);
+             logger.info("Schülerliste-Anfrage von Lehrer: {} (Request-ID: {})", username, requestId);
              try {
-                 ((ServerClient) sc).postAllSchueler();
+                 ((ServerClient) sc).postAllSchueler(requestId);
              } catch (IOException e) {
                  logger.error("Fehler beim Senden der Schülerliste an Lehrer: {}", username, e);
                  throw new RuntimeException(e);
