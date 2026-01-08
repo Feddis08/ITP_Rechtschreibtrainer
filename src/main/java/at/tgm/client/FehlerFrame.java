@@ -1,7 +1,6 @@
 package at.tgm.client;
 
 import javax.swing.*;
-import java.awt.*;
 
 public class FehlerFrame extends JFrame {
 

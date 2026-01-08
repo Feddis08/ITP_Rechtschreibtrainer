@@ -4,7 +4,6 @@ import at.tgm.client.Client;
 import at.tgm.network.core.NetworkContext;
 import at.tgm.network.core.Packet;
 import at.tgm.objects.FachbegriffItem;
-import at.tgm.objects.Quiz;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -137,8 +137,9 @@ public class SchuelerState implements ClientState {
 
             totalPoints += earned;
 
-            // Dem Client das richtige Wort + erreichte Punkte zurückgeben
+            // Dem Client das richtige Wort + erreichte Punkte + maxPoints zurückgeben
             userOne.setPoints(earned);
+            userOne.setMaxPoints(full);
             userOne.setWord(rightOne.getWord());
         }
 

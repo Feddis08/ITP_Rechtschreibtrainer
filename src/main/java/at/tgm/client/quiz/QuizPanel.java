@@ -219,7 +219,7 @@ public class QuizPanel extends JPanel {
             FachbegriffItem originalItem =
                     (originalItems != null && i < originalItems.length) ? originalItems[i] : null;
 
-            listPanel.add(buildResultCard(originalItem, serverItem));
+            listPanel.add(buildResultCard(serverItem, originalItem));
             listPanel.add(Box.createVerticalStrut(10));
         }
 
@@ -231,19 +231,21 @@ public class QuizPanel extends JPanel {
         repaint();
     }
 
-    private JPanel buildResultCard(FachbegriffItem original, FachbegriffItem result) {
+    private JPanel buildResultCard(FachbegriffItem result, FachbegriffItem original) {
         JPanel card = new JPanel(new BorderLayout());
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1),
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
 
-        String phrase = result != null ? result.getPhrase() : (original != null ? original.getPhrase() : "");
+        // Verwende direkt die Daten vom Server (result)
+        String phrase = (result != null) ? result.getPhrase() : (original != null ? original.getPhrase() : "");
         String correctWord = (result != null && result.getWord() != null) ? result.getWord() : "—";
         String userWord = (original != null && original.getWord() != null) ? original.getWord() : "—";
 
-        int fullPoints = (original != null) ? original.getPoints() : (result != null ? result.getPoints() : 0);
+        // Punkte direkt vom Server-Item verwenden
         int earnedPoints = (result != null) ? result.getPoints() : 0;
+        int maxPoints = (result != null) ? result.getMaxPoints() : (original != null ? original.getPoints() : 0);
 
         // Farblogik:
         // 0 Punkte      -> rot
@@ -252,7 +254,7 @@ public class QuizPanel extends JPanel {
         Color bg;
         if (earnedPoints <= 0) {
             bg = new Color(255, 200, 200); // rot
-        } else if (earnedPoints < fullPoints) {
+        } else if (earnedPoints < maxPoints) {
             bg = new Color(255, 245, 200); // gelblich
         } else {
             bg = new Color(200, 255, 200); // grün
@@ -281,7 +283,7 @@ public class QuizPanel extends JPanel {
         JLabel correctLabel = new JLabel("Richtig: " + correctWord);
         correctLabel.setFont(new Font("Arial", Font.PLAIN, 13));
 
-        JLabel pointsLabel = new JLabel("Punkte: " + earnedPoints + " / " + fullPoints);
+        JLabel pointsLabel = new JLabel("Punkte: " + earnedPoints + " / " + maxPoints);
         pointsLabel.setFont(new Font("Arial", Font.ITALIC, 12));
 
         bottom.add(userLabel);
