@@ -1,6 +1,8 @@
 package at.tgm.server;
 
 import at.tgm.network.packets.S2CPOSTAllSchueler;
+import at.tgm.network.packets.S2CPOSTStats;
+import at.tgm.network.packets.S2CResponseSchuelerVorschlag;
 import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Nutzer;
 import at.tgm.objects.Quiz;
@@ -73,5 +75,98 @@ public class LehrerState implements ClientState {
         logger.warn("Lehrer '{}' versuchte, Statistiken abzurufen (nicht erlaubt, Request-ID: {})", 
                    client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
         throw new UnsupportedOperationException("Lehrer können keine Statistiken abrufen");
+    }
+
+    @Override
+    public void addSchueler(ServerClient client, Schueler schueler, long requestId) throws IOException {
+        if (client == null) {
+            throw new IllegalArgumentException("Client darf nicht null sein");
+        }
+        if (schueler == null) {
+            logger.error("Lehrer '{}' versuchte, null-Schueler hinzuzufügen", 
+                        client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown");
+            S2CResponseSchuelerVorschlag response = new S2CResponseSchuelerVorschlag(false, "Schüler-Daten fehlen");
+            response.setRequestId(requestId);
+            client.send(response);
+            return;
+        }
+
+        String username = schueler.getUsername();
+        if (username == null || username.trim().isEmpty()) {
+            logger.error("Lehrer '{}' versuchte, Schueler ohne Benutzername hinzuzufügen", 
+                        client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown");
+            S2CResponseSchuelerVorschlag response = new S2CResponseSchuelerVorschlag(false, "Benutzername ist erforderlich");
+            response.setRequestId(requestId);
+            client.send(response);
+            return;
+        }
+
+        // Prüfe, ob Benutzername bereits existiert
+        Nutzer existing = Server.findNutzerByUsername(username);
+        if (existing != null) {
+            logger.warn("Lehrer '{}' versuchte, Schueler mit bereits existierendem Benutzername '{}' hinzuzufügen", 
+                       client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", username);
+            S2CResponseSchuelerVorschlag response = new S2CResponseSchuelerVorschlag(false, "Benutzername bereits vorhanden");
+            response.setRequestId(requestId);
+            client.send(response);
+            return;
+        }
+
+        // Füge Schüler hinzu
+        try {
+            Server.addNutzer(schueler);
+            logger.info("Lehrer '{}' hat erfolgreich Schueler '{}' hinzugefügt", 
+                       client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", username);
+            S2CResponseSchuelerVorschlag response = new S2CResponseSchuelerVorschlag(true, "Schüler erfolgreich angelegt");
+            response.setRequestId(requestId);
+            client.send(response);
+        } catch (Exception e) {
+            logger.error("Fehler beim Hinzufügen des Schülers '{}' durch Lehrer '{}'", 
+                        username, client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", e);
+            S2CResponseSchuelerVorschlag response = new S2CResponseSchuelerVorschlag(false, "Fehler: " + e.getMessage());
+            response.setRequestId(requestId);
+            client.send(response);
+        }
+    }
+
+    @Override
+    public void postSchuelerStats(ServerClient client, String schuelerUsername, long requestId) throws IOException {
+        if (client == null) {
+            throw new IllegalArgumentException("Client darf nicht null sein");
+        }
+        if (schuelerUsername == null || schuelerUsername.trim().isEmpty()) {
+            logger.error("Lehrer '{}' versuchte, Stats ohne Benutzername abzurufen", 
+                        client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown");
+            return;
+        }
+
+        // Finde den Schüler
+        Nutzer nutzer = Server.findNutzerByUsername(schuelerUsername);
+        if (nutzer == null || !(nutzer instanceof Schueler)) {
+            logger.warn("Lehrer '{}' versuchte, Stats für nicht existierenden Schüler '{}' abzurufen", 
+                       client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", schuelerUsername);
+            // Sende leeres Array
+            S2CPOSTStats response = new S2CPOSTStats(new Quiz[0]);
+            response.setRequestId(requestId);
+            client.send(response);
+            return;
+        }
+
+        Schueler schueler = (Schueler) nutzer;
+        Quiz[] quizzes = schueler.getQuizzes();
+        if (quizzes == null) {
+            quizzes = new Quiz[0];
+        }
+
+        logger.info("Sende {} Quizes von Schüler '{}' an Lehrer '{}' (Request-ID: {})", 
+                   quizzes.length, 
+                   schuelerUsername,
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown",
+                   requestId);
+        
+        S2CPOSTStats response = new S2CPOSTStats(quizzes);
+        response.setRequestId(requestId); // WICHTIG: Request-ID übernehmen
+        client.send(response);
+        logger.debug("SchuelerStats erfolgreich gesendet");
     }
 }

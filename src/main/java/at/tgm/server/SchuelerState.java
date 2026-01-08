@@ -190,6 +190,20 @@ public class SchuelerState implements ClientState {
         }
     }
 
+    @Override
+    public void addSchueler(ServerClient client, Schueler schueler, long requestId) throws IOException {
+        logger.warn("Schüler '{}' versuchte, Schueler hinzuzufügen (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Schüler können keine Schueler hinzufügen");
+    }
+
+    @Override
+    public void postSchuelerStats(ServerClient client, String schuelerUsername, long requestId) throws IOException {
+        logger.warn("Schüler '{}' versuchte, SchuelerStats abzurufen (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Schüler können keine SchuelerStats abrufen");
+    }
+
     private String safe(String s) {
         return s == null ? "" : s.trim();
     }

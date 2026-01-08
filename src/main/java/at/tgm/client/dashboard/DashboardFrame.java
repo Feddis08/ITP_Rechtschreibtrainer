@@ -38,6 +38,8 @@ public class DashboardFrame extends JFrame {
     private StatsPanel statsPanel;
     private SchuelerListPanel schuelerListPanel;
     private SchuelerDashboardPanel schuelerDashboardPanel;
+    private SchuelerAnlegenPanel schuelerAnlegenPanel;
+    private Schueler currentViewedSchueler; // Für Navigation zurück
 
     // =========================
     // Öffentliche API-Methoden
@@ -120,13 +122,44 @@ public class DashboardFrame extends JFrame {
 
     // Wird von SchuelerListPanel aufgerufen, wenn man auf einen Schüler klickt
     public void showSchuelerDashboard(Schueler schueler) {
+        this.currentViewedSchueler = schueler;
         if (schuelerDashboardPanel == null) {
-            schuelerDashboardPanel = new SchuelerDashboardPanel();
+            schuelerDashboardPanel = new SchuelerDashboardPanel(this);
             contentPanel.add(schuelerDashboardPanel, "SCHUELER_DASHBOARD");
         }
 
         schuelerDashboardPanel.setSchueler(schueler);
         showCard("SCHUELER_DASHBOARD");
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+    
+    public Schueler getCurrentViewedSchueler() {
+        return currentViewedSchueler;
+    }
+    
+    public GuiController getController() {
+        return controller;
+    }
+    
+    /**
+     * Lädt die Quizes eines bestimmten Schülers (für Lehrer).
+     */
+    public void loadSchuelerQuizes(String schuelerUsername) {
+        showCard("STATS_LOADING");
+        if (controller != null) {
+            controller.loadSchuelerQuizes(schuelerUsername);
+        }
+    }
+
+    // Zeigt das Panel zum Anlegen eines neuen Schülers
+    public void showSchuelerAnlegen() {
+        if (schuelerAnlegenPanel == null) {
+            schuelerAnlegenPanel = new SchuelerAnlegenPanel(this, controller);
+            contentPanel.add(schuelerAnlegenPanel, "SCHUELER_ANLEGEN");
+        }
+
+        showCard("SCHUELER_ANLEGEN");
         contentPanel.revalidate();
         contentPanel.repaint();
     }
@@ -305,6 +338,11 @@ public class DashboardFrame extends JFrame {
                 controller.onSchuelerMenuClicked();
             }
         }));
+        side.add(Box.createRigidArea(new Dimension(0, 8)));
+
+        side.add(createMenuButton("Schüler anlegen", () -> {
+            showSchuelerAnlegen();
+        }));
         side.add(Box.createVerticalGlue());
 
         side.add(createMenuButton("Beenden", this::exitApp));
@@ -377,6 +415,14 @@ public class DashboardFrame extends JFrame {
     private void showCard(String name) {
         CardLayout cl = (CardLayout) contentPanel.getLayout();
         cl.show(contentPanel, name);
+    }
+    
+    public void showCardPublic(String name) {
+        showCard(name);
+    }
+    
+    public Nutzer getCurrentNutzer() {
+        return nutzer;
     }
 
     // Vom GuiController aufgerufen

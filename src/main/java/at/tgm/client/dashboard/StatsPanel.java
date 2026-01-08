@@ -3,6 +3,7 @@ package at.tgm.client.dashboard;
 
 import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Quiz;
+import at.tgm.objects.Schueler;
 
 import javax.swing.*;
 import java.awt.*;
@@ -22,9 +23,37 @@ public class StatsPanel extends JPanel {
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
 
-        JLabel header = new JLabel("Deine vergangenen Quiz-Ergebnisse");
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        String headerText = (parent != null && parent.getCurrentNutzer() instanceof at.tgm.objects.Lehrer)
+            ? "Quiz-Ergebnisse des Schülers"
+            : "Deine vergangenen Quiz-Ergebnisse";
+        JLabel header = new JLabel(headerText);
         header.setFont(new Font("Arial", Font.BOLD, 20));
-        add(header, BorderLayout.NORTH);
+        headerPanel.add(header, BorderLayout.WEST);
+        
+        JButton backButton = new JButton("← Zurück");
+        backButton.addActionListener(e -> {
+            if (parent != null) {
+                // Für Schüler: zurück zum Home
+                if (parent.getCurrentNutzer() instanceof at.tgm.objects.Schueler) {
+                    parent.showCardPublic("HOME");
+                } else {
+                    // Für Lehrer: zurück zum Schüler-Dashboard
+                    Schueler schueler = parent.getCurrentViewedSchueler();
+                    if (schueler != null) {
+                        parent.showSchuelerDashboard(schueler);
+                    } else {
+                        // Fallback: zurück zur Schülerliste
+                        if (parent.getController() != null) {
+                            parent.getController().onSchuelerMenuClicked();
+                        }
+                    }
+                }
+            }
+        });
+        headerPanel.add(backButton, BorderLayout.EAST);
+        
+        add(headerPanel, BorderLayout.NORTH);
 
         JPanel listPanel = new JPanel();
         listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));

@@ -2,6 +2,7 @@ package at.tgm.server;
 
 import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Quiz;
+import at.tgm.objects.Schueler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +47,20 @@ public class UnauthenticatedState implements ClientState {
     @Override
     public void postStats(ServerClient client, long requestId) {
         logger.warn("Nicht authentifizierter Client versuchte, Statistiken abzurufen (Request-ID: {}): {}", 
+                   requestId, client.getSocket().getRemoteSocketAddress());
+        throw new UnsupportedOperationException("Client ist nicht authentifiziert");
+    }
+
+    @Override
+    public void addSchueler(ServerClient client, Schueler schueler, long requestId) throws IOException {
+        logger.warn("Nicht authentifizierter Client versuchte, Schueler hinzuzufügen (Request-ID: {}): {}", 
+                   requestId, client.getSocket().getRemoteSocketAddress());
+        throw new UnsupportedOperationException("Client ist nicht authentifiziert");
+    }
+
+    @Override
+    public void postSchuelerStats(ServerClient client, String schuelerUsername, long requestId) throws IOException {
+        logger.warn("Nicht authentifizierter Client versuchte, SchuelerStats abzurufen (Request-ID: {}): {}", 
                    requestId, client.getSocket().getRemoteSocketAddress());
         throw new UnsupportedOperationException("Client ist nicht authentifiziert");
     }

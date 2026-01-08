@@ -36,6 +36,12 @@ public class NetworkSystem {
         logger.debug("Paket registriert: C2SGETAllSchueler (ID: 10)");
         PacketRegistry.registerPacket(S2CPOSTAllSchueler.class); //11
         logger.debug("Paket registriert: S2CPOSTAllSchueler (ID: 11)");
-        logger.info("NetworkSystem erfolgreich initialisiert, {} Pakete registriert", 12);
+        PacketRegistry.registerPacket(C2SPOSTSchuelerVorschlag.class); //12
+        logger.debug("Paket registriert: C2SPOSTSchuelerVorschlag (ID: 12)");
+        PacketRegistry.registerPacket(S2CResponseSchuelerVorschlag.class); //13
+        logger.debug("Paket registriert: S2CResponseSchuelerVorschlag (ID: 13)");
+        PacketRegistry.registerPacket(C2SGETSchuelerStats.class); //14
+        logger.debug("Paket registriert: C2SGETSchuelerStats (ID: 14)");
+        logger.info("NetworkSystem erfolgreich initialisiert, {} Pakete registriert", 15);
     }
 }

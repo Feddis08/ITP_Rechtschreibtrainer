@@ -1,10 +1,13 @@
 package at.tgm.client;
 
+import at.tgm.client.ClientNetworkController;
 import at.tgm.client.anmeldung.AnmeldeController;
 import at.tgm.client.dashboard.DashboardFrame;
 import at.tgm.network.packets.C2SGETAllSchueler;
+import at.tgm.network.packets.C2SGETSchuelerStats;
 import at.tgm.network.packets.C2SINITQuiz;
 import at.tgm.network.packets.S2CPOSTAllSchueler;
+import at.tgm.network.packets.S2CPOSTStats;
 import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Nutzer;
 import at.tgm.objects.Quiz;
@@ -160,5 +163,61 @@ public class GuiController {
 
     public Nutzer getCurrentNutzer() {
         return currentNutzer;
+    }
+
+    /**
+     * Lädt die Quizes eines bestimmten Schülers (für Lehrer).
+     */
+    public void loadSchuelerQuizes(String schuelerUsername) {
+        logger.info("Lade Quizes für Schüler: {}", schuelerUsername);
+        
+        // In separatem Thread ausführen, um UI nicht zu blockieren
+        new Thread(() -> {
+            try {
+                C2SGETSchuelerStats request = new C2SGETSchuelerStats(schuelerUsername);
+                S2CPOSTStats response = ClientNetworkController.socketClient
+                    .getChannel()
+                    .sendAndWait(
+                        request,
+                        S2CPOSTStats.class,
+                        5,
+                        TimeUnit.SECONDS
+                    );
+                
+                // UI-Update im EDT (Event Dispatch Thread)
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    Quiz[] quizzes = response.getQuizzes();
+                    showStats(quizzes);
+                });
+                
+            } catch (TimeoutException e) {
+                logger.error("Timeout beim Laden der SchuelerQuizes", e);
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    if (dashboardFrame != null) {
+                        javax.swing.JOptionPane.showMessageDialog(
+                            dashboardFrame,
+                            "Quizes konnten nicht geladen werden (Timeout).",
+                            "Fehler",
+                            javax.swing.JOptionPane.ERROR_MESSAGE
+                        );
+                    }
+                });
+            } catch (IOException e) {
+                logger.error("Fehler beim Laden der SchuelerQuizes", e);
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    if (dashboardFrame != null) {
+                        javax.swing.JOptionPane.showMessageDialog(
+                            dashboardFrame,
+                            "Fehler beim Laden der Quizes: " + e.getMessage(),
+                            "Fehler",
+                            javax.swing.JOptionPane.ERROR_MESSAGE
+                        );
+                    }
+                });
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.error("Unterbrochen beim Laden der SchuelerQuizes", e);
+            }
+        }).start();
     }
 }

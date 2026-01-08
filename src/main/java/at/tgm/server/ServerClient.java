@@ -59,4 +59,14 @@ public class ServerClient extends SocketClient {
         logger.debug("postStats() aufgerufen mit Request-ID: {}", requestId);
         state.postStats(this, requestId);
     }
+
+    public void addSchueler(at.tgm.objects.Schueler schueler, long requestId) throws IOException {
+        logger.debug("addSchueler() aufgerufen mit Request-ID: {}", requestId);
+        state.addSchueler(this, schueler, requestId);
+    }
+
+    public void postSchuelerStats(String schuelerUsername, long requestId) throws IOException {
+        logger.debug("postSchuelerStats() aufgerufen für Schüler '{}' mit Request-ID: {}", schuelerUsername, requestId);
+        state.postSchuelerStats(this, schuelerUsername, requestId);
+    }
 }

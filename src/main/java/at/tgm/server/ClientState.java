@@ -2,6 +2,7 @@ package at.tgm.server;
 
 import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Quiz;
+import at.tgm.objects.Schueler;
 
 import java.io.IOException;
 
@@ -44,4 +45,22 @@ public interface ClientState {
      * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
      */
     void postStats(ServerClient client, long requestId);
+
+    /**
+     * Fügt einen neuen Schüler zum System hinzu.
+     * Nur für LehrerState verfügbar.
+     * @param client Der ServerClient
+     * @param schueler Der neue Schüler
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
+     */
+    void addSchueler(ServerClient client, Schueler schueler, long requestId) throws IOException;
+
+    /**
+     * Sendet die Statistiken (Quizes) eines bestimmten Schülers an den Lehrer.
+     * Nur für LehrerState verfügbar.
+     * @param client Der ServerClient
+     * @param schuelerUsername Der Benutzername des Schülers
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
+     */
+    void postSchuelerStats(ServerClient client, String schuelerUsername, long requestId) throws IOException;
 }
