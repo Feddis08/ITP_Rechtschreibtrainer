@@ -5,7 +5,13 @@ import at.tgm.client.GuiController;
 import at.tgm.client.profile.ProfilePanel;
 import at.tgm.client.quiz.QuizPanel;
 import at.tgm.network.packets.C2SGETStats;
+import at.tgm.network.packets.S2CPOSTStats;
 import at.tgm.objects.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -19,6 +25,8 @@ import java.net.URLConnection;
 
 public class DashboardFrame extends JFrame {
 
+    private static final Logger logger = LoggerFactory.getLogger(DashboardFrame.class);
+    
     private Nutzer nutzer;
     private final GuiController controller;
 
@@ -46,6 +54,54 @@ public class DashboardFrame extends JFrame {
         showCard("STATS_VIEW");
         contentPanel.revalidate();
         contentPanel.repaint();
+    }
+    
+    /**
+     * Lädt Statistiken synchron vom Server.
+     */
+    private void loadStats() {
+        // In separatem Thread ausführen, um UI nicht zu blockieren
+        new Thread(() -> {
+            try {
+                C2SGETStats request = new C2SGETStats();
+                S2CPOSTStats response = ClientNetworkController.socketClient
+                    .getChannel()
+                    .sendAndWait(
+                        request,
+                        S2CPOSTStats.class,
+                        5,
+                        TimeUnit.SECONDS
+                    );
+                
+                // UI-Update im EDT (Event Dispatch Thread)
+                SwingUtilities.invokeLater(() -> {
+                    Quiz[] quizzes = response.getQuizzes();
+                    showStats(quizzes);
+                });
+                
+            } catch (TimeoutException e) {
+                logger.error("Timeout beim Laden der Statistiken", e);
+                SwingUtilities.invokeLater(() -> {
+                    showCard("STATS_VIEW");
+                    JOptionPane.showMessageDialog(this, 
+                        "Statistiken konnten nicht geladen werden (Timeout).", 
+                        "Fehler", 
+                        JOptionPane.ERROR_MESSAGE);
+                });
+            } catch (IOException e) {
+                logger.error("Fehler beim Laden der Statistiken", e);
+                SwingUtilities.invokeLater(() -> {
+                    showCard("STATS_VIEW");
+                    JOptionPane.showMessageDialog(this, 
+                        "Fehler beim Laden der Statistiken: " + e.getMessage(), 
+                        "Fehler", 
+                        JOptionPane.ERROR_MESSAGE);
+                });
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.error("Unterbrochen beim Laden der Statistiken", e);
+            }
+        }).start();
     }
 
     // Wird von außen (Netzwerk/GuiController) aufgerufen, wenn Schueler[] da ist
@@ -230,12 +286,7 @@ public class DashboardFrame extends JFrame {
 
         side.add(createMenuButton("Statistiken", () -> {
             showCard("STATS_LOADING");
-            try {
-                C2SGETStats packet = new C2SGETStats();
-                ClientNetworkController.socketClient.send(packet);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+            loadStats();
         }));
         side.add(Box.createVerticalGlue());
 

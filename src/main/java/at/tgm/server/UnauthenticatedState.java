@@ -44,9 +44,9 @@ public class UnauthenticatedState implements ClientState {
     }
 
     @Override
-    public void postStats(ServerClient client) {
-        logger.warn("Nicht authentifizierter Client versuchte, Statistiken abzurufen: {}", 
-                   client.getSocket().getRemoteSocketAddress());
+    public void postStats(ServerClient client, long requestId) {
+        logger.warn("Nicht authentifizierter Client versuchte, Statistiken abzurufen (Request-ID: {}): {}", 
+                   requestId, client.getSocket().getRemoteSocketAddress());
         throw new UnsupportedOperationException("Client ist nicht authentifiziert");
     }
 }

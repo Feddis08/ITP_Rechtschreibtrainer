@@ -55,8 +55,8 @@ public class ServerClient extends SocketClient {
         state.finishQuiz(this, fgs);
     }
 
-    public void postStats() {
-        logger.debug("postStats() aufgerufen");
-        state.postStats(this);
+    public void postStats(long requestId) {
+        logger.debug("postStats() aufgerufen mit Request-ID: {}", requestId);
+        state.postStats(this, requestId);
     }
 }

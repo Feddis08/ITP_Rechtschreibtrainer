@@ -165,7 +165,7 @@ public class SchuelerState implements ClientState {
      * Sendet alle bisherigen Quizzes des Schülers.
      */
     @Override
-    public void postStats(ServerClient client) {
+    public void postStats(ServerClient client, long requestId) {
         if (client == null) {
             throw new IllegalArgumentException("Client darf nicht null sein");
         }
@@ -176,10 +176,12 @@ public class SchuelerState implements ClientState {
         if (quizzes == null)
             quizzes = new Quiz[0];
 
-        logger.info("Sende Statistiken an Schüler '{}' ({} Quizzes)", s.getUsername(), quizzes.length);
+        logger.info("Sende Statistiken an Schüler '{}' ({} Quizzes, Request-ID: {})", s.getUsername(), quizzes.length, requestId);
 
         try {
-            client.send(new S2CPOSTStats(quizzes));
+            S2CPOSTStats response = new S2CPOSTStats(quizzes);
+            response.setRequestId(requestId); // WICHTIG: Request-ID übernehmen
+            client.send(response);
             logger.debug("Statistiken erfolgreich an Schüler '{}' gesendet", s.getUsername());
         } catch (IOException e) {
             logger.error("Fehler beim Senden der Statistiken an Schüler '{}'", s.getUsername(), e);

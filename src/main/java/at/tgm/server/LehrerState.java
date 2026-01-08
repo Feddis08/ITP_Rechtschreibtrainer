@@ -67,9 +67,9 @@ public class LehrerState implements ClientState {
     }
 
     @Override
-    public void postStats(ServerClient client) {
-        logger.warn("Lehrer '{}' versuchte, Statistiken abzurufen (nicht erlaubt)", 
-                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown");
+    public void postStats(ServerClient client, long requestId) {
+        logger.warn("Lehrer '{}' versuchte, Statistiken abzurufen (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
         throw new UnsupportedOperationException("Lehrer können keine Statistiken abrufen");
     }
 }

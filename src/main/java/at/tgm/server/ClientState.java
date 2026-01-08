@@ -38,6 +38,8 @@ public interface ClientState {
     /**
      * Sendet alle bisherigen Quizzes des Schülers.
      * Nur für SchuelerState verfügbar.
+     * @param client Der ServerClient
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
      */
-    void postStats(ServerClient client);
+    void postStats(ServerClient client, long requestId);
 }

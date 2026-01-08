@@ -2,7 +2,6 @@ package at.tgm.client;
 
 import at.tgm.client.anmeldung.AnmeldeController;
 import at.tgm.client.dashboard.DashboardFrame;
-import at.tgm.network.packets.C2SGETStats;
 import at.tgm.network.packets.C2SHelloPacket;
 import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Nutzer;
@@ -82,7 +81,10 @@ public class Client {
             return;
         }
         
-        GUI.loginFailed("Failed Login", "Check Username or Password!");
+        // GUI-Operationen müssen im EDT (Event Dispatch Thread) ausgeführt werden
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            GUI.loginFailed("Failed Login", "Check Username or Password!");
+        });
     }
 
     // Wird vom Netzwerkcode aufgerufen
@@ -96,7 +98,10 @@ public class Client {
             return;
         }
         
-        GUI.loginSuccessful(n);
+        // GUI-Operationen müssen im EDT (Event Dispatch Thread) ausgeführt werden
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            GUI.loginSuccessful(n);
+        });
     }
 
     // Wird vom Netzwerkcode aufgerufen, sobald Fachbegriffe fürs Quiz da sind
@@ -109,7 +114,10 @@ public class Client {
             return;
         }
         
-        GUI.showQuiz(items);
+        // GUI-Operationen müssen im EDT (Event Dispatch Thread) ausgeführt werden
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            GUI.showQuiz(items);
+        });
     }
     
     // Wird vom Netzwerkcode aufgerufen, wenn Quiz-Ergebnis kommt
@@ -136,9 +144,12 @@ public class Client {
             return;
         }
         
-        if (dashboardFrame != null) {
-            dashboardFrame.showSchuelerList(schueler);
-        }
+        // GUI-Operationen müssen im EDT (Event Dispatch Thread) ausgeführt werden
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            if (dashboardFrame != null) {
+                dashboardFrame.showSchuelerList(schueler);
+            }
+        });
     }
 
     // Wird vom Netzwerkcode aufgerufen, wenn die Verbindung verloren geht
