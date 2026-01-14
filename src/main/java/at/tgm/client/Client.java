@@ -24,12 +24,17 @@ public class Client {
     public static void main(String[] args) throws IOException {
         logger.info("Client wird gestartet...");
 
-        String host = "localhost";
+        // Wenn keine Argumente gegeben sind, starte immer Discovery
+        if (args.length == 0) {
+            logger.info("Keine Argumente - starte Server-Discovery");
+            ServerDiscoveryLauncher.discoverAndConnect();
+            return;
+        }
+
+        // Nur wenn explizit Host/Port angegeben, verbinde direkt (für Tests oder spezielle Fälle)
+        String host = args[0];
         int port = 5123;
         
-        if (args.length > 0) {
-            host = args[0];
-        }
         if (args.length > 1) {
             try {
                 port = Integer.parseInt(args[1]);
@@ -43,8 +48,19 @@ public class Client {
             }
         }
 
+        logger.info("Direkte Verbindung zu {}:{}", host, port);
         ClientNetworkController.connect(host, port);
         logger.debug("Verbindung zum Server hergestellt");
+
+        startAfterConnection();
+    }
+    
+    /**
+     * Startet den Client nachdem die Verbindung bereits hergestellt wurde.
+     * Wird vom Launcher verwendet.
+     */
+    public static void startAfterConnection() throws IOException {
+        logger.debug("Starte Client nach Verbindung");
 
         // Login-GUI starten
         logger.debug("Zeige Login-GUI");

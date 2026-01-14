@@ -80,7 +80,8 @@ task runClient(type: JavaExec) {
     group = 'application'
     description = 'Startet den Client'
     classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'at.tgm.client.Client'
+    mainClass = 'at.tgm.Main'
+    args = ['client']
 }
 
 // Task zum Starten des Servers

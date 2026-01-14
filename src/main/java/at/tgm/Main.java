@@ -1,6 +1,7 @@
 package at.tgm;
 
 import at.tgm.client.Client;
+import at.tgm.client.ServerDiscoveryLauncher;
 import at.tgm.server.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,10 +58,12 @@ public class Main {
     }
 
     private static void startClient(String[] args) {
-        String host = DEFAULT_HOST;
-        int port = DEFAULT_PORT;
-
+        // Wenn Host und Port explizit angegeben, verwende direkte Verbindung
+        // Ansonsten starte Launcher mit Discovery
         if (args.length > 1) {
+            String host = DEFAULT_HOST;
+            int port = DEFAULT_PORT;
+
             // Wenn das zweite Argument einen Doppelpunkt enthält, ist es "host:port"
             if (args[1].contains(":")) {
                 String[] parts = args[1].split(":", 2);
@@ -91,14 +94,18 @@ public class Main {
                     }
                 }
             }
-        }
 
-        logger.info("Starte Client und verbinde mit {}:{}", host, port);
-        try {
-            Client.main(new String[]{host, String.valueOf(port)});
-        } catch (IOException e) {
-            logger.error("Fehler beim Starten des Clients", e);
-            System.exit(1);
+            logger.info("Starte Client und verbinde direkt mit {}:{}", host, port);
+            try {
+                Client.main(new String[]{host, String.valueOf(port)});
+            } catch (IOException e) {
+                logger.error("Fehler beim Starten des Clients", e);
+                System.exit(1);
+            }
+        } else {
+            // Keine Parameter - starte Launcher mit Discovery
+            logger.info("Starte Client-Launcher mit Server-Discovery");
+            ServerDiscoveryLauncher.discoverAndConnect();
         }
     }
 

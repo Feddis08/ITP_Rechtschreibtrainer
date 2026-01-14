@@ -14,10 +14,14 @@ public class ServerNetworkController {
     private static final Logger logger = LoggerFactory.getLogger(ServerNetworkController.class);
 
     public static SocketClient clients[];
+    private static ServerDiscoveryService discoveryService;
 
     public static void start(int port) {
         NetworkSystem.init();
 
+        // Starte Discovery-Service
+        discoveryService = new ServerDiscoveryService(port);
+        discoveryService.start();
 
         clients = new SocketClient[0];
 
