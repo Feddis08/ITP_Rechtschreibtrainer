@@ -69,4 +69,14 @@ public class ServerClient extends SocketClient {
         logger.debug("postSchuelerStats() aufgerufen für Schüler '{}' mit Request-ID: {}", schuelerUsername, requestId);
         state.postSchuelerStats(this, schuelerUsername, requestId);
     }
+
+    public void toggleSchuelerStatus(String schuelerUsername, long requestId) throws IOException {
+        logger.debug("toggleSchuelerStatus() aufgerufen für Schüler '{}' mit Request-ID: {}", schuelerUsername, requestId);
+        state.toggleSchuelerStatus(this, schuelerUsername, requestId);
+    }
+
+    public void deleteSchueler(String schuelerUsername, long requestId) throws IOException {
+        logger.debug("deleteSchueler() aufgerufen für Schüler '{}' mit Request-ID: {}", schuelerUsername, requestId);
+        state.deleteSchueler(this, schuelerUsername, requestId);
+    }
 }

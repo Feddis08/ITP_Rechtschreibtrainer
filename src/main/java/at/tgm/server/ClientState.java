@@ -63,4 +63,22 @@ public interface ClientState {
      * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
      */
     void postSchuelerStats(ServerClient client, String schuelerUsername, long requestId) throws IOException;
+
+    /**
+     * Aktiviert oder deaktiviert einen Schüler-Account.
+     * Nur für LehrerState verfügbar.
+     * @param client Der ServerClient
+     * @param schuelerUsername Der Benutzername des Schülers
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
+     */
+    void toggleSchuelerStatus(ServerClient client, String schuelerUsername, long requestId) throws IOException;
+
+    /**
+     * Löscht einen Schüler-Account komplett.
+     * Nur für LehrerState verfügbar.
+     * @param client Der ServerClient
+     * @param schuelerUsername Der Benutzername des Schülers
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
+     */
+    void deleteSchueler(ServerClient client, String schuelerUsername, long requestId) throws IOException;
 }

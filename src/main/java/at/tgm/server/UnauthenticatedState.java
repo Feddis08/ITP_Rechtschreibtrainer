@@ -64,4 +64,18 @@ public class UnauthenticatedState implements ClientState {
                    requestId, client.getSocket().getRemoteSocketAddress());
         throw new UnsupportedOperationException("Client ist nicht authentifiziert");
     }
+
+    @Override
+    public void toggleSchuelerStatus(ServerClient client, String schuelerUsername, long requestId) throws IOException {
+        logger.warn("Nicht authentifizierter Client versuchte, Schueler-Status zu ändern (Request-ID: {}): {}", 
+                   requestId, client.getSocket().getRemoteSocketAddress());
+        throw new UnsupportedOperationException("Client ist nicht authentifiziert");
+    }
+
+    @Override
+    public void deleteSchueler(ServerClient client, String schuelerUsername, long requestId) throws IOException {
+        logger.warn("Nicht authentifizierter Client versuchte, Schueler zu löschen (Request-ID: {}): {}", 
+                   requestId, client.getSocket().getRemoteSocketAddress());
+        throw new UnsupportedOperationException("Client ist nicht authentifiziert");
+    }
 }

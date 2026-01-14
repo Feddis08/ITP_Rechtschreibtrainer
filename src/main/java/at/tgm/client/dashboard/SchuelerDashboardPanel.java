@@ -1,13 +1,23 @@
 package at.tgm.client.dashboard;
 
+import at.tgm.client.ClientNetworkController;
+import at.tgm.network.packets.C2SDeleteSchueler;
+import at.tgm.network.packets.C2SToggleSchuelerStatus;
+import at.tgm.network.packets.S2CResponseSchuelerOperation;
 import at.tgm.objects.NutzerStatus;
 import at.tgm.objects.Schueler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
 import java.text.SimpleDateFormat;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class SchuelerDashboardPanel extends JPanel {
+
+    private static final Logger logger = LoggerFactory.getLogger(SchuelerDashboardPanel.class);
 
     private final JLabel nameLabel = new JLabel();
     private final JLabel usernameLabel = new JLabel();
@@ -21,6 +31,8 @@ public class SchuelerDashboardPanel extends JPanel {
     
     private Schueler currentSchueler;
     private final DashboardFrame parent;
+    private JButton toggleStatusButton;
+    private JButton deleteButton;
 
     public SchuelerDashboardPanel(DashboardFrame parent) {
         this.parent = parent;
@@ -84,7 +96,7 @@ public class SchuelerDashboardPanel extends JPanel {
 
         add(center, BorderLayout.CENTER);
         
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         JButton quizesButton = new JButton("Quizes anzeigen");
         quizesButton.addActionListener(e -> {
             if (currentSchueler != null && parent != null) {
@@ -92,6 +104,16 @@ public class SchuelerDashboardPanel extends JPanel {
             }
         });
         buttonPanel.add(quizesButton);
+        
+        toggleStatusButton = new JButton("Ausschreiben");
+        toggleStatusButton.addActionListener(e -> handleToggleStatus());
+        buttonPanel.add(toggleStatusButton);
+        
+        deleteButton = new JButton("Loeschen");
+        deleteButton.setForeground(Color.RED);
+        deleteButton.addActionListener(e -> handleDelete());
+        buttonPanel.add(deleteButton);
+        
         add(buttonPanel, BorderLayout.SOUTH);
     }
 
@@ -153,6 +175,164 @@ public class SchuelerDashboardPanel extends JPanel {
             lastLoginLabel.setText("Letzter Login: -");
         }
         createdAtLabel.setText("Account erstellt: " + sdf.format(s.getCreatedAt()));
+        
+        // Update button text based on deactivated status
+        if (toggleStatusButton != null) {
+            if (s.isDeactivated()) {
+                toggleStatusButton.setText("Einschreiben");
+            } else {
+                toggleStatusButton.setText("Ausschreiben");
+            }
+        }
+    }
+    
+    private void handleToggleStatus() {
+        if (currentSchueler == null) {
+            return;
+        }
+        
+        String username = currentSchueler.getUsername();
+        logger.info("Toggle Status für Schüler: {}", username);
+        
+        // In separatem Thread ausführen, um UI nicht zu blockieren
+        new Thread(() -> {
+            try {
+                C2SToggleSchuelerStatus request = new C2SToggleSchuelerStatus(username);
+                S2CResponseSchuelerOperation response = ClientNetworkController.socketClient
+                    .getChannel()
+                    .sendAndWait(
+                        request,
+                        S2CResponseSchuelerOperation.class,
+                        5,
+                        TimeUnit.SECONDS
+                    );
+                
+                // UI-Update im EDT (Event Dispatch Thread)
+                SwingUtilities.invokeLater(() -> {
+                    if (response.isSuccess()) {
+                        // Update local student object
+                        currentSchueler.setDeactivated(!currentSchueler.isDeactivated());
+                        // Update button text
+                        if (currentSchueler.isDeactivated()) {
+                            toggleStatusButton.setText("Einschreiben");
+                        } else {
+                            toggleStatusButton.setText("Ausschreiben");
+                        }
+                        JOptionPane.showMessageDialog(this, 
+                            response.getMessage(), 
+                            "Erfolg", 
+                            JOptionPane.INFORMATION_MESSAGE);
+                        // Refresh student list to ensure consistency
+                        if (parent != null && parent.getController() != null) {
+                            parent.getController().onSchuelerMenuClicked();
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(this, 
+                            response.getMessage(), 
+                            "Fehler", 
+                            JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+                
+            } catch (TimeoutException e) {
+                logger.error("Timeout beim Toggle Status", e);
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(this, 
+                        "Operation konnte nicht abgeschlossen werden (Timeout).", 
+                        "Fehler", 
+                        JOptionPane.ERROR_MESSAGE);
+                });
+            } catch (Exception e) {
+                logger.error("Fehler beim Toggle Status", e);
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(this, 
+                        "Fehler: " + e.getMessage(), 
+                        "Fehler", 
+                        JOptionPane.ERROR_MESSAGE);
+                });
+            }
+        }).start();
+    }
+    
+    private void handleDelete() {
+        if (currentSchueler == null) {
+            return;
+        }
+        
+        String username = currentSchueler.getUsername();
+        String displayName = currentSchueler.getDisplayName() != null && !currentSchueler.getDisplayName().isEmpty()
+            ? currentSchueler.getDisplayName()
+            : username;
+        
+        // Bestätigungsdialog
+        int result = JOptionPane.showConfirmDialog(
+            this,
+            "Möchten Sie den Schüler '" + displayName + "' wirklich komplett löschen?\n" +
+            "Diese Aktion kann nicht rückgängig gemacht werden!",
+            "Schüler löschen",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
+        );
+        
+        if (result != JOptionPane.YES_OPTION) {
+            return;
+        }
+        
+        logger.info("Lösche Schüler: {}", username);
+        
+        // In separatem Thread ausführen, um UI nicht zu blockieren
+        new Thread(() -> {
+            try {
+                C2SDeleteSchueler request = new C2SDeleteSchueler(username);
+                S2CResponseSchuelerOperation response = ClientNetworkController.socketClient
+                    .getChannel()
+                    .sendAndWait(
+                        request,
+                        S2CResponseSchuelerOperation.class,
+                        5,
+                        TimeUnit.SECONDS
+                    );
+                
+                // UI-Update im EDT (Event Dispatch Thread)
+                SwingUtilities.invokeLater(() -> {
+                    if (response.isSuccess()) {
+                        JOptionPane.showMessageDialog(this, 
+                            response.getMessage(), 
+                            "Erfolg", 
+                            JOptionPane.INFORMATION_MESSAGE);
+                        // Zurück zur Schülerliste
+                        if (parent != null) {
+                            parent.showSchuelerList(null); // Wird neu geladen
+                            if (parent.getController() != null) {
+                                parent.getController().onSchuelerMenuClicked();
+                            }
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(this, 
+                            response.getMessage(), 
+                            "Fehler", 
+                            JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+                
+            } catch (TimeoutException e) {
+                logger.error("Timeout beim Löschen", e);
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(this, 
+                        "Operation konnte nicht abgeschlossen werden (Timeout).", 
+                        "Fehler", 
+                        JOptionPane.ERROR_MESSAGE);
+                });
+            } catch (Exception e) {
+                logger.error("Fehler beim Löschen", e);
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(this, 
+                        "Fehler: " + e.getMessage(), 
+                        "Fehler", 
+                        JOptionPane.ERROR_MESSAGE);
+                });
+            }
+        }).start();
     }
     
     private Color colorForStatus(NutzerStatus s) {

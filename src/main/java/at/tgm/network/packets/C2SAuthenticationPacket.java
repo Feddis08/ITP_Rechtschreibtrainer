@@ -84,6 +84,15 @@ public class C2SAuthenticationPacket implements RequestPacket {
 
         logger.info("Neue Anmeldung: {} (Request-ID: {})", this.username, requestId);
         try {
+            // Prüfe ob Account deaktiviert ist
+            if (n != null && n.isDeactivated()) {
+                logger.warn("Login-Versuch für deaktivierten Account: {} (Request-ID: {})", this.username, requestId);
+                S2CLoginFailedPacket response = new S2CLoginFailedPacket();
+                response.setRequestId(requestId);
+                client.send(response);
+                return;
+            }
+            
             if (n != null && n.checkPassword(this.password)){
 
                 // Client bleibt derselbe - nur State ändern

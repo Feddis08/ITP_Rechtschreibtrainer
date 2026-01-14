@@ -125,4 +125,38 @@ public class Server {
         nutzers = nutzersNeu;
         logger.debug("Nutzer '{}' erfolgreich hinzugefügt (Array vergrößert)", nutzer.getUsername());
     }
+
+    public static void removeNutzer(Nutzer nutzer) {
+        if (nutzer == null) {
+            logger.error("Versuch, null-Nutzer zu entfernen");
+            throw new IllegalArgumentException("Nutzer darf nicht null sein");
+        }
+
+        logger.debug("Entferne Nutzer '{}'", nutzer.getUsername());
+
+        // Finde den Index des Nutzers
+        int indexToRemove = -1;
+        for (int i = 0; i < nutzers.length; i++) {
+            if (nutzers[i] != null && nutzers[i].equals(nutzer)) {
+                indexToRemove = i;
+                break;
+            }
+        }
+
+        if (indexToRemove == -1) {
+            logger.warn("Nutzer '{}' nicht im Array gefunden", nutzer.getUsername());
+            throw new IllegalArgumentException("Nutzer nicht gefunden");
+        }
+
+        // Erstelle neues Array ohne den zu löschenden Nutzer
+        Nutzer[] nutzersNeu = new Nutzer[nutzers.length - 1];
+        int newIndex = 0;
+        for (int i = 0; i < nutzers.length; i++) {
+            if (i != indexToRemove) {
+                nutzersNeu[newIndex++] = nutzers[i];
+            }
+        }
+        nutzers = nutzersNeu;
+        logger.info("Nutzer '{}' erfolgreich entfernt", nutzer.getUsername());
+    }
 }

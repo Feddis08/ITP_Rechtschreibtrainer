@@ -169,4 +169,95 @@ public class LehrerState implements ClientState {
         client.send(response);
         logger.debug("SchuelerStats erfolgreich gesendet");
     }
+
+    @Override
+    public void toggleSchuelerStatus(ServerClient client, String schuelerUsername, long requestId) throws IOException {
+        if (client == null) {
+            throw new IllegalArgumentException("Client darf nicht null sein");
+        }
+        if (schuelerUsername == null || schuelerUsername.trim().isEmpty()) {
+            logger.error("Lehrer '{}' versuchte, Status ohne Benutzername zu ändern", 
+                        client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown");
+            at.tgm.network.packets.S2CResponseSchuelerOperation response = 
+                new at.tgm.network.packets.S2CResponseSchuelerOperation(false, "Benutzername ist erforderlich");
+            response.setRequestId(requestId);
+            client.send(response);
+            return;
+        }
+
+        // Finde den Schüler
+        at.tgm.objects.Nutzer nutzer = Server.findNutzerByUsername(schuelerUsername);
+        if (nutzer == null || !(nutzer instanceof Schueler)) {
+            logger.warn("Lehrer '{}' versuchte, Status für nicht existierenden Schüler '{}' zu ändern", 
+                       client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", schuelerUsername);
+            at.tgm.network.packets.S2CResponseSchuelerOperation response = 
+                new at.tgm.network.packets.S2CResponseSchuelerOperation(false, "Schüler nicht gefunden");
+            response.setRequestId(requestId);
+            client.send(response);
+            return;
+        }
+
+        Schueler schueler = (Schueler) nutzer;
+        boolean wasDeactivated = schueler.isDeactivated();
+        schueler.setDeactivated(!wasDeactivated);
+        
+        String action = wasDeactivated ? "eingeschrieben" : "ausgeschrieben";
+        logger.info("Lehrer '{}' hat Schüler '{}' {} (Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", 
+                   schuelerUsername, action, requestId);
+        
+        at.tgm.network.packets.S2CResponseSchuelerOperation response = 
+            new at.tgm.network.packets.S2CResponseSchuelerOperation(true, 
+                "Schüler erfolgreich " + action);
+        response.setRequestId(requestId);
+        client.send(response);
+    }
+
+    @Override
+    public void deleteSchueler(ServerClient client, String schuelerUsername, long requestId) throws IOException {
+        if (client == null) {
+            throw new IllegalArgumentException("Client darf nicht null sein");
+        }
+        if (schuelerUsername == null || schuelerUsername.trim().isEmpty()) {
+            logger.error("Lehrer '{}' versuchte, Schüler ohne Benutzername zu löschen", 
+                        client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown");
+            at.tgm.network.packets.S2CResponseSchuelerOperation response = 
+                new at.tgm.network.packets.S2CResponseSchuelerOperation(false, "Benutzername ist erforderlich");
+            response.setRequestId(requestId);
+            client.send(response);
+            return;
+        }
+
+        // Finde den Schüler
+        at.tgm.objects.Nutzer nutzer = Server.findNutzerByUsername(schuelerUsername);
+        if (nutzer == null || !(nutzer instanceof Schueler)) {
+            logger.warn("Lehrer '{}' versuchte, nicht existierenden Schüler '{}' zu löschen", 
+                       client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", schuelerUsername);
+            at.tgm.network.packets.S2CResponseSchuelerOperation response = 
+                new at.tgm.network.packets.S2CResponseSchuelerOperation(false, "Schüler nicht gefunden");
+            response.setRequestId(requestId);
+            client.send(response);
+            return;
+        }
+
+        // Lösche den Schüler
+        try {
+            Server.removeNutzer(nutzer);
+            logger.info("Lehrer '{}' hat Schüler '{}' gelöscht (Request-ID: {})", 
+                       client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", 
+                       schuelerUsername, requestId);
+            
+            at.tgm.network.packets.S2CResponseSchuelerOperation response = 
+                new at.tgm.network.packets.S2CResponseSchuelerOperation(true, "Schüler erfolgreich gelöscht");
+            response.setRequestId(requestId);
+            client.send(response);
+        } catch (Exception e) {
+            logger.error("Fehler beim Löschen des Schülers '{}' durch Lehrer '{}'", 
+                        schuelerUsername, client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", e);
+            at.tgm.network.packets.S2CResponseSchuelerOperation response = 
+                new at.tgm.network.packets.S2CResponseSchuelerOperation(false, "Fehler: " + e.getMessage());
+            response.setRequestId(requestId);
+            client.send(response);
+        }
+    }
 }

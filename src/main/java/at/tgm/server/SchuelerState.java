@@ -207,6 +207,20 @@ public class SchuelerState implements ClientState {
         throw new UnsupportedOperationException("Schüler können keine SchuelerStats abrufen");
     }
 
+    @Override
+    public void toggleSchuelerStatus(ServerClient client, String schuelerUsername, long requestId) throws IOException {
+        logger.warn("Schüler '{}' versuchte, Schueler-Status zu ändern (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Schüler können keine Schueler-Status ändern");
+    }
+
+    @Override
+    public void deleteSchueler(ServerClient client, String schuelerUsername, long requestId) throws IOException {
+        logger.warn("Schüler '{}' versuchte, Schueler zu löschen (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Schüler können keine Schueler löschen");
+    }
+
     private String safe(String s) {
         return s == null ? "" : s.trim();
     }
