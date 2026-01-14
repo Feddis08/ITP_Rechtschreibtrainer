@@ -4,7 +4,8 @@ import at.tgm.client.Client;
 import at.tgm.network.core.NetworkContext;
 import at.tgm.network.core.Packet;
 import at.tgm.objects.FachbegriffItem;
-import at.tgm.objects.Quiz;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.io.DataInputStream;
@@ -12,6 +13,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class S2CResultOfQuiz implements Packet {
+
+    private static final Logger logger = LoggerFactory.getLogger(S2CResultOfQuiz.class);
     FachbegriffItem[] fgs;
     int points;
     int maxPoints;
@@ -62,9 +65,17 @@ public class S2CResultOfQuiz implements Packet {
 
     @Override
     public void handle(NetworkContext ctx) {
+        logger.info("Quiz-Ergebnis empfangen: {}/{} Punkte ({} Items)", points, maxPoints, 
+                   fgs != null ? fgs.length : 0);
+        
+        // Use Client callback for test mode
+        Client.onQuizResult(fgs, points, maxPoints);
+        
+        // Also try to show in GUI if available (for normal operation)
         SwingUtilities.invokeLater(() -> {
             if (Client.dashboardFrame != null && Client.dashboardFrame.getQuizPanel() != null) {
                 Client.dashboardFrame.getQuizPanel().showResults(fgs, points, maxPoints);
+                logger.debug("Quiz-Ergebnis im UI angezeigt");
             }
         });
     }

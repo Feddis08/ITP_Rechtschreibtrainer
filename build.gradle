@@ -1,6 +1,24 @@
 plugins {
     id 'java'
-    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+// Workaround für Shadow Plugin Kompatibilität mit Gradle 8.10+
+shadowJar {
+    archiveBaseName.set("itp-app")
+    archiveVersion.set("1.0")
+    archiveClassifier.set("")
+    manifest {
+        attributes 'Main-Class': 'at.tgm.Main'
+    }
+    // Vermeide Probleme mit META-INF Verzeichnissen
+    mergeServiceFiles()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 group 'at.tgm'
@@ -9,10 +27,12 @@ version '1.0-SNAPSHOT'
 repositories {
     mavenCentral()
 }
-shadowJar {
-    archiveBaseName.set("itp-app")
-    archiveVersion.set("1.0")
-    archiveClassifier.set("")
+
+// Konfiguriere das normale JAR mit Main-Class
+jar {
+    manifest {
+        attributes 'Main-Class': 'at.tgm.Main'
+    }
 }
 dependencies {
     implementation 'com.esotericsoftware:kryo:5.5.0'
@@ -22,6 +42,10 @@ dependencies {
 
     implementation 'org.lz4:lz4-java:1.8.0'
 
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+    implementation 'ch.qos.logback:logback-classic:1.4.11'
+
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 }
@@ -29,4 +53,150 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    
+    // Show test output in console
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = true
+    }
+    
+    // Ensure tests have enough time (for integration tests)  
+    // Note: Individual test timeouts are handled via @Timeout annotation in test classes
+    
+    // Run tests even if there are test failures
+    ignoreFailures = false
+    
+    // Fork JVM for tests to avoid conflicts
+    forkEvery = 1
+}
+
+// Helper task to print classpath (for debugging)
+task printClasspath {
+    doLast {
+        println sourceSets.main.runtimeClasspath.asPath
+    }
+}
+
+// Task zum Starten des Clients
+task runClient(type: JavaExec) {
+    group = 'application'
+    description = 'Startet den Client'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'at.tgm.Main'
+    args = ['client']
+}
+
+// Task zum Starten des Servers
+task runServer(type: JavaExec) {
+    group = 'application'
+    description = 'Startet den Server'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'at.tgm.server.Server'
+}
+
+// ============================================
+// Native Installer Builds (jpackage)
+// ============================================
+
+def appName = 'ITP-Rechtschreibtrainer-Client'
+def appVersion = '1.0'
+def vendor = 'TGM'
+def mainClass = 'at.tgm.Main'
+
+// Task zum Erstellen eines .dmg Installers für macOS
+task buildDmg(type: Exec) {
+    group = 'distribution'
+    description = 'Erstellt einen .dmg Installer für macOS'
+    
+    dependsOn shadowJar
+    
+    executable = 'jpackage'
+    
+    doFirst {
+        // Prüfe ob wir auf macOS sind
+        if (!System.getProperty('os.name').toLowerCase().contains('mac')) {
+            throw new GradleException('buildDmg kann nur auf macOS ausgeführt werden')
+        }
+        
+        // Lösche vorherige Builds
+        delete fileTree("${buildDir}/distributions") {
+            include "*.dmg"
+        }
+        
+        def mainJar = shadowJar.archiveFileName.get()
+        args = [
+            '--input', "${buildDir}/libs",
+            '--name', appName,
+            '--main-jar', mainJar,
+            '--main-class', mainClass,
+            '--app-version', appVersion,
+            '--vendor', vendor,
+            '--dest', "${buildDir}/distributions",
+            '--type', 'dmg',
+            '--java-options', '--add-opens=java.base/java.lang=ALL-UNNAMED',
+            '--java-options', '--add-opens=java.base/java.util=ALL-UNNAMED',
+            '--arguments', 'client'
+        ]
+    }
+    
+    doLast {
+        println "✅ .dmg Installer erstellt in: ${buildDir}/distributions/"
+    }
+}
+
+// Task zum Erstellen eines .exe Installers für Windows
+task buildExe(type: Exec) {
+    group = 'distribution'
+    description = 'Erstellt einen .exe Installer für Windows'
+    
+    dependsOn shadowJar
+    
+    executable = 'jpackage'
+    
+    doFirst {
+        // Prüfe ob wir auf Windows sind
+        if (!System.getProperty('os.name').toLowerCase().contains('windows')) {
+            throw new GradleException('buildExe kann nur auf Windows ausgeführt werden. Für Cross-Compilation siehe buildExeCrossPlatform')
+        }
+        
+        // Lösche vorherige Builds
+        delete fileTree("${buildDir}/distributions") {
+            include "*.exe"
+        }
+        
+        def mainJar = shadowJar.archiveFileName.get()
+        args = [
+            '--input', "${buildDir}/libs",
+            '--name', appName,
+            '--main-jar', mainJar,
+            '--main-class', mainClass,
+            '--app-version', appVersion,
+            '--vendor', vendor,
+            '--dest', "${buildDir}/distributions",
+            '--type', 'exe',
+            '--win-dir-chooser',
+            '--win-menu',
+            '--win-shortcut',
+            '--java-options', '--add-opens=java.base/java.lang=ALL-UNNAMED',
+            '--java-options', '--add-opens=java.base/java.util=ALL-UNNAMED',
+            '--arguments', 'client'
+        ]
+    }
+    
+    doLast {
+        println "✅ .exe Installer erstellt in: ${buildDir}/distributions/"
+    }
+}
+
+// Task zum Erstellen beider Installer (nur auf macOS möglich)
+task buildAllInstallers {
+    group = 'distribution'
+    description = 'Erstellt alle verfügbaren Installer'
+    dependsOn buildDmg
+    
+    doLast {
+        println "⚠️  Hinweis: .exe kann nur auf Windows erstellt werden."
+        println "   Für Windows-Installer bitte 'gradlew buildExe' auf einem Windows-System ausführen."
+    }
 }

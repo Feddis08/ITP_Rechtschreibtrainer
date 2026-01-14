@@ -5,7 +5,14 @@ import at.tgm.client.GuiController;
 import at.tgm.client.profile.ProfilePanel;
 import at.tgm.client.quiz.QuizPanel;
 import at.tgm.network.packets.C2SGETStats;
+import at.tgm.network.packets.S2CPOSTStats;
 import at.tgm.objects.*;
+import at.tgm.objects.SysAdmin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -19,6 +26,8 @@ import java.net.URLConnection;
 
 public class DashboardFrame extends JFrame {
 
+    private static final Logger logger = LoggerFactory.getLogger(DashboardFrame.class);
+    
     private Nutzer nutzer;
     private final GuiController controller;
 
@@ -30,6 +39,16 @@ public class DashboardFrame extends JFrame {
     private StatsPanel statsPanel;
     private SchuelerListPanel schuelerListPanel;
     private SchuelerDashboardPanel schuelerDashboardPanel;
+    private SchuelerAnlegenPanel schuelerAnlegenPanel;
+    private Schueler currentViewedSchueler; // Für Navigation zurück
+
+    // Neue Panels für Lehrer
+    private FachbegriffeVerwaltungPanel fachbegriffeVerwaltungPanel;
+    private QuizTemplatesVerwaltungPanel quizTemplatesVerwaltungPanel;
+    
+    // Panels für SysAdmin (Lehrer-Verwaltung)
+    private LehrerListPanel lehrerListPanel;
+    private LehrerAnlegenPanel lehrerAnlegenPanel;
 
     // =========================
     // Öffentliche API-Methoden
@@ -46,6 +65,54 @@ public class DashboardFrame extends JFrame {
         showCard("STATS_VIEW");
         contentPanel.revalidate();
         contentPanel.repaint();
+    }
+    
+    /**
+     * Lädt Statistiken synchron vom Server.
+     */
+    private void loadStats() {
+        // In separatem Thread ausführen, um UI nicht zu blockieren
+        new Thread(() -> {
+            try {
+                C2SGETStats request = new C2SGETStats();
+                S2CPOSTStats response = ClientNetworkController.socketClient
+                    .getChannel()
+                    .sendAndWait(
+                        request,
+                        S2CPOSTStats.class,
+                        5,
+                        TimeUnit.SECONDS
+                    );
+                
+                // UI-Update im EDT (Event Dispatch Thread)
+                SwingUtilities.invokeLater(() -> {
+                    Quiz[] quizzes = response.getQuizzes();
+                    showStats(quizzes);
+                });
+                
+            } catch (TimeoutException e) {
+                logger.error("Timeout beim Laden der Statistiken", e);
+                SwingUtilities.invokeLater(() -> {
+                    showCard("STATS_VIEW");
+                    JOptionPane.showMessageDialog(this, 
+                        "Statistiken konnten nicht geladen werden (Timeout).", 
+                        "Fehler", 
+                        JOptionPane.ERROR_MESSAGE);
+                });
+            } catch (IOException e) {
+                logger.error("Fehler beim Laden der Statistiken", e);
+                SwingUtilities.invokeLater(() -> {
+                    showCard("STATS_VIEW");
+                    JOptionPane.showMessageDialog(this, 
+                        "Fehler beim Laden der Statistiken: " + e.getMessage(), 
+                        "Fehler", 
+                        JOptionPane.ERROR_MESSAGE);
+                });
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.error("Unterbrochen beim Laden der Statistiken", e);
+            }
+        }).start();
     }
 
     // Wird von außen (Netzwerk/GuiController) aufgerufen, wenn Schueler[] da ist
@@ -64,8 +131,9 @@ public class DashboardFrame extends JFrame {
 
     // Wird von SchuelerListPanel aufgerufen, wenn man auf einen Schüler klickt
     public void showSchuelerDashboard(Schueler schueler) {
+        this.currentViewedSchueler = schueler;
         if (schuelerDashboardPanel == null) {
-            schuelerDashboardPanel = new SchuelerDashboardPanel();
+            schuelerDashboardPanel = new SchuelerDashboardPanel(this);
             contentPanel.add(schuelerDashboardPanel, "SCHUELER_DASHBOARD");
         }
 
@@ -73,6 +141,106 @@ public class DashboardFrame extends JFrame {
         showCard("SCHUELER_DASHBOARD");
         contentPanel.revalidate();
         contentPanel.repaint();
+    }
+    
+    public Schueler getCurrentViewedSchueler() {
+        return currentViewedSchueler;
+    }
+    
+    public GuiController getController() {
+        return controller;
+    }
+
+    // ======================================================
+    // Fachbegriffe-Verwaltung
+    // ======================================================
+
+    public void showFachbegriffeVerwaltung() {
+        if (fachbegriffeVerwaltungPanel == null) {
+            fachbegriffeVerwaltungPanel = new FachbegriffeVerwaltungPanel(this);
+            contentPanel.add(fachbegriffeVerwaltungPanel, "FACHBEGRIFFE_VERWALTUNG");
+        }
+
+        showCard("FACHBEGRIFFE_VERWALTUNG");
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
+    // ======================================================
+    // Quiz-Templates-Verwaltung
+    // ======================================================
+
+    public void showQuizTemplatesVerwaltung() {
+        if (quizTemplatesVerwaltungPanel == null) {
+            quizTemplatesVerwaltungPanel = new QuizTemplatesVerwaltungPanel(this);
+            contentPanel.add(quizTemplatesVerwaltungPanel, "QUIZ_TEMPLATES_VERWALTUNG");
+        }
+
+        showCard("QUIZ_TEMPLATES_VERWALTUNG");
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+    
+    /**
+     * Lädt die Quizes eines bestimmten Schülers (für Lehrer).
+     */
+    public void loadSchuelerQuizes(String schuelerUsername) {
+        showCard("STATS_LOADING");
+        if (controller != null) {
+            controller.loadSchuelerQuizes(schuelerUsername);
+        }
+    }
+
+    // Zeigt das Panel zum Anlegen eines neuen Schülers
+    public void showSchuelerAnlegen() {
+        if (schuelerAnlegenPanel == null) {
+            schuelerAnlegenPanel = new SchuelerAnlegenPanel(this, controller);
+            contentPanel.add(schuelerAnlegenPanel, "SCHUELER_ANLEGEN");
+        }
+
+        showCard("SCHUELER_ANLEGEN");
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
+    // ======================================================
+    // Lehrer-Verwaltung (für SysAdmin)
+    // ======================================================
+
+    public void showLehrerList(at.tgm.objects.Lehrer[] lehrer) {
+        if (lehrerListPanel != null) {
+            contentPanel.remove(lehrerListPanel);
+        }
+
+        lehrerListPanel = new LehrerListPanel(lehrer, this);
+        contentPanel.add(lehrerListPanel, "LEHRER_LIST");
+
+        showCard("LEHRER_LIST");
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
+    public void showLehrerAnlegen() {
+        if (lehrerAnlegenPanel == null) {
+            lehrerAnlegenPanel = new LehrerAnlegenPanel(this, controller);
+            contentPanel.add(lehrerAnlegenPanel, "LEHRER_ANLEGEN");
+        }
+
+        showCard("LEHRER_ANLEGEN");
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
+    public void toggleLehrerStatus(String lehrerUsername) {
+        if (controller != null) {
+            controller.toggleLehrerStatus(lehrerUsername);
+        }
+    }
+
+    public void deleteLehrer(String lehrerUsername) {
+        if (controller != null) {
+            controller.deleteLehrer(lehrerUsername);
+        }
     }
 
     // =========================
@@ -82,10 +250,17 @@ public class DashboardFrame extends JFrame {
     }
 
     public void showQuizResults(FachbegriffItem[] correctedItems, int points, int maxPoints) {
-        if (quizPanel != null) {
-            quizPanel.showResults(correctedItems, points, maxPoints);
-            showCard("QUIZ"); // sicherstellen, dass die Quiz-Card sichtbar ist
+        // Erstelle QuizPanel falls es noch nicht existiert (z.B. nach neuem Login)
+        if (quizPanel == null) {
+            // Erstelle ein leeres QuizPanel - wir brauchen nur die showResults-Funktionalität
+            quizPanel = new QuizPanel(new FachbegriffItem[0]);
+            contentPanel.add(quizPanel, "QUIZ");
         }
+        
+        quizPanel.showResults(correctedItems, points, maxPoints);
+        showCard("QUIZ"); // sicherstellen, dass die Quiz-Card sichtbar ist
+        contentPanel.revalidate();
+        contentPanel.repaint();
     }
 
     public DashboardFrame(Nutzer nutzer, GuiController controller) {
@@ -188,6 +363,8 @@ public class DashboardFrame extends JFrame {
             return buildSchuelerSidebar();
         } else if (nutzer instanceof Lehrer) {
             return buildLehrerSidebar();
+        } else if (nutzer instanceof SysAdmin) {
+            return buildSysAdminSidebar();
         } else {
             return buildDefaultSidebar();
         }
@@ -223,12 +400,7 @@ public class DashboardFrame extends JFrame {
 
         side.add(createMenuButton("Statistiken", () -> {
             showCard("STATS_LOADING");
-            try {
-                C2SGETStats packet = new C2SGETStats();
-                ClientNetworkController.socketClient.send(packet);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+            loadStats();
         }));
         side.add(Box.createVerticalGlue());
 
@@ -236,7 +408,7 @@ public class DashboardFrame extends JFrame {
         return side;
     }
 
-    // Sidebar für Lehrer: Schülerliste + Beenden
+    // Sidebar für Lehrer: Schülerliste + Lernkarten + Quiz-Templates + Beenden
     private JComponent buildLehrerSidebar() {
         JPanel side = createSidebarBase();
 
@@ -244,12 +416,44 @@ public class DashboardFrame extends JFrame {
             showCard("SCHUELER_LOADING");
             if (controller != null) {
                 // Controller schickt Request an Server, Antwort: Schueler[]
-                try {
-                    controller.onSchuelerMenuClicked();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                controller.onSchuelerMenuClicked();
             }
+        }));
+        side.add(Box.createRigidArea(new Dimension(0, 8)));
+
+        side.add(createMenuButton("Schüler anlegen", () -> {
+            showSchuelerAnlegen();
+        }));
+        side.add(Box.createRigidArea(new Dimension(0, 8)));
+
+        side.add(createMenuButton("Lernkarten", () -> {
+            showFachbegriffeVerwaltung();
+        }));
+        side.add(Box.createRigidArea(new Dimension(0, 8)));
+
+        side.add(createMenuButton("Quiz-Templates", () -> {
+            showQuizTemplatesVerwaltung();
+        }));
+        side.add(Box.createVerticalGlue());
+
+        side.add(createMenuButton("Beenden", this::exitApp));
+        return side;
+    }
+
+    // Sidebar für SysAdmin: Lehrer-Verwaltung + Beenden
+    private JComponent buildSysAdminSidebar() {
+        JPanel side = createSidebarBase();
+
+        side.add(createMenuButton("Lehrer", () -> {
+            showCard("LEHRER_LOADING");
+            if (controller != null) {
+                controller.onLehrerMenuClicked();
+            }
+        }));
+        side.add(Box.createRigidArea(new Dimension(0, 8)));
+
+        side.add(createMenuButton("Lehrer anlegen", () -> {
+            showLehrerAnlegen();
         }));
         side.add(Box.createVerticalGlue());
 
@@ -295,6 +499,10 @@ public class DashboardFrame extends JFrame {
                 Bitte warten...
                 """), "SCHUELER_LOADING");
 
+        panel.add(buildPlaceholderPanel("Lehrerliste wird geladen...", """
+                Bitte warten...
+                """), "LEHRER_LOADING");
+
         ((CardLayout) panel.getLayout()).show(panel, "HOME");
         return panel;
     }
@@ -324,6 +532,14 @@ public class DashboardFrame extends JFrame {
         CardLayout cl = (CardLayout) contentPanel.getLayout();
         cl.show(contentPanel, name);
     }
+    
+    public void showCardPublic(String name) {
+        showCard(name);
+    }
+    
+    public Nutzer getCurrentNutzer() {
+        return nutzer;
+    }
 
     // Vom GuiController aufgerufen
     public void showQuiz(FachbegriffItem[] items) {
@@ -339,13 +555,41 @@ public class DashboardFrame extends JFrame {
 
     // Vom GuiController aufgerufen
     public void showProfile() {
-        if (profilePanel == null) {
-            profilePanel = new ProfilePanel(nutzer);
-            contentPanel.add(profilePanel, "PROFILE");
+        // Entferne altes Panel, damit es mit neuen Daten neu erstellt wird
+        if (profilePanel != null) {
+            contentPanel.remove(profilePanel);
+            profilePanel = null;
         }
+        
+        profilePanel = new ProfilePanel(nutzer);
+        contentPanel.add(profilePanel, "PROFILE");
+        
         showCard("PROFILE");
         contentPanel.revalidate();
         contentPanel.repaint();
+    }
+
+    public void refreshProfile() {
+        if (profilePanel != null) {
+            // Entferne altes Panel
+            contentPanel.remove(profilePanel);
+            profilePanel = null;
+            // Erstelle neues Panel mit aktualisierten Daten
+            showProfile();
+        }
+    }
+
+    public boolean isProfileVisible() {
+        // Prüfe ob profilePanel existiert und im contentPanel ist
+        if (profilePanel == null) {
+            return false;
+        }
+        for (java.awt.Component comp : contentPanel.getComponents()) {
+            if (comp == profilePanel) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void exitApp() {

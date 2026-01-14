@@ -1,15 +1,16 @@
 package at.tgm.network.core;
 
-import at.tgm.network.core.NetworkChannel;
-import at.tgm.network.core.NetworkContext;
-import at.tgm.network.core.Packet;
 import at.tgm.objects.Distro;
 import at.tgm.objects.Nutzer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.Socket;
 
 public class SocketClient extends NetworkContext {
+
+    private static final Logger logger = LoggerFactory.getLogger(SocketClient.class);
 
     private final NetworkChannel channel;
 
@@ -22,6 +23,7 @@ public class SocketClient extends NetworkContext {
 
         this.distro = distro;
         this.channel = new NetworkChannel(socket, this);
+        logger.debug("SocketClient erstellt: Distro={}, Remote={}", distro, socket.getRemoteSocketAddress());
     }
 
     public Distro getDistro() {
@@ -33,6 +35,8 @@ public class SocketClient extends NetworkContext {
     }
 
     public void setNutzer(Nutzer nutzer) {
+        String username = nutzer != null ? nutzer.getUsername() : "null";
+        logger.debug("Nutzer gesetzt: {}", username);
         this.nutzer = nutzer;
     }
 
@@ -41,6 +45,7 @@ public class SocketClient extends NetworkContext {
     }
 
     public void send(Packet packet) throws IOException {
+        logger.debug("Sende Paket über Channel: {}", packet.getClass().getSimpleName());
         channel.send(packet);
     }
 

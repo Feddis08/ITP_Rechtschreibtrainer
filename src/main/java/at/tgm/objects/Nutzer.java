@@ -24,6 +24,7 @@ public abstract class Nutzer extends SendableObject{
     private String email;
     private String profilePictureUrl;
     private long lastLoginTimestamp;
+    private boolean isDeactivated;
 
     public Nutzer() {
         this.username = "";
@@ -31,6 +32,7 @@ public abstract class Nutzer extends SendableObject{
         this.createdAt = System.currentTimeMillis();
         this.uuid = UUID.randomUUID().toString();
         this.status = NutzerStatus.OFFLINE;
+        this.isDeactivated = false;
     }
     public Nutzer (String username, String password){
         this.username = username;
@@ -38,6 +40,7 @@ public abstract class Nutzer extends SendableObject{
         this.createdAt = System.currentTimeMillis();
         this.status = NutzerStatus.OFFLINE;
         this.uuid = String.valueOf(UUID.randomUUID());
+        this.isDeactivated = false;
     }
 
 
@@ -149,5 +152,13 @@ public abstract class Nutzer extends SendableObject{
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
+    }
+
+    public boolean isDeactivated() {
+        return isDeactivated;
+    }
+
+    public void setDeactivated(boolean deactivated) {
+        isDeactivated = deactivated;
     }
 }

@@ -1,7 +1,9 @@
 package at.tgm.client.dashboard;
 
 
+import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Quiz;
+import at.tgm.objects.Schueler;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,9 +23,37 @@ public class StatsPanel extends JPanel {
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
 
-        JLabel header = new JLabel("Deine vergangenen Quiz-Ergebnisse");
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        String headerText = (parent != null && parent.getCurrentNutzer() instanceof at.tgm.objects.Lehrer)
+            ? "Quiz-Ergebnisse des Schülers"
+            : "Deine vergangenen Quiz-Ergebnisse";
+        JLabel header = new JLabel(headerText);
         header.setFont(new Font("Arial", Font.BOLD, 20));
-        add(header, BorderLayout.NORTH);
+        headerPanel.add(header, BorderLayout.WEST);
+        
+        JButton backButton = new JButton("← Zurück");
+        backButton.addActionListener(e -> {
+            if (parent != null) {
+                // Für Schüler: zurück zum Home
+                if (parent.getCurrentNutzer() instanceof at.tgm.objects.Schueler) {
+                    parent.showCardPublic("HOME");
+                } else {
+                    // Für Lehrer: zurück zum Schüler-Dashboard
+                    Schueler schueler = parent.getCurrentViewedSchueler();
+                    if (schueler != null) {
+                        parent.showSchuelerDashboard(schueler);
+                    } else {
+                        // Fallback: zurück zur Schülerliste
+                        if (parent.getController() != null) {
+                            parent.getController().onSchuelerMenuClicked();
+                        }
+                    }
+                }
+            }
+        });
+        headerPanel.add(backButton, BorderLayout.EAST);
+        
+        add(headerPanel, BorderLayout.NORTH);
 
         JPanel listPanel = new JPanel();
         listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
@@ -60,7 +90,16 @@ public class StatsPanel extends JPanel {
 
         Color statusColor = (percent >= 50) ? new Color(0, 180, 0) : new Color(200, 0, 0);
 
-        JLabel title = new JLabel("Quiz — " + (int) percent + "% erreicht");
+        // Quiz-Name anzeigen, falls vorhanden
+        String quizName = q.getName();
+        String titleText;
+        if (quizName != null && !quizName.trim().isEmpty()) {
+            titleText = quizName + " — " + (int) percent + "% erreicht";
+        } else {
+            titleText = "Quiz — " + (int) percent + "% erreicht";
+        }
+
+        JLabel title = new JLabel(titleText);
         title.setFont(new Font("Arial", Font.BOLD, 16));
         title.setForeground(statusColor);
 
@@ -84,10 +123,14 @@ public class StatsPanel extends JPanel {
         panel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-
                 // Quiz-Ergebnis wie bei "Finish"
+                FachbegriffItem[] userItems = q.getUserItems();
+                if (userItems == null) {
+                    // Fallback: Wenn userItems null ist, zeige zumindest eine leere Liste
+                    userItems = new FachbegriffItem[0];
+                }
                 parent.showQuizResults(
-                        q.getUserItems(),
+                        userItems,
                         q.getPoints(),
                         q.getMaxPoints()
                 );

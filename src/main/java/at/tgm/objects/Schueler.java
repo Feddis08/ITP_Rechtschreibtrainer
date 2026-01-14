@@ -8,7 +8,7 @@ public class Schueler extends Nutzer{
 
     private String schoolClass;
 
-
+    private Note note;
     private Quiz quiz;
     private Quiz[] quizzes;
 
@@ -41,5 +41,13 @@ public class Schueler extends Nutzer{
 
     public void setQuizzes(Quiz[] quizzes) {
         this.quizzes = quizzes;
+    }
+
+    public Note getNote() {
+        return note;
+    }
+
+    public void setNote(Note note) {
+        this.note = note;
     }
 }
