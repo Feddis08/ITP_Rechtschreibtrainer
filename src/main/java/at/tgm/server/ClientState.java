@@ -29,8 +29,18 @@ public interface ClientState {
     /**
      * Startet ein neues Quiz für den Schüler.
      * Nur für SchuelerState verfügbar.
+     * @param client Der ServerClient
+     * @param templateId Die ID des Quiz-Templates (0 = zufälliges Quiz)
      */
-    void startQuiz(ServerClient client) throws IOException;
+    void startQuiz(ServerClient client, long templateId) throws IOException;
+
+    /**
+     * Sendet alle Quiz-Templates an den Schüler-Client (für Auswahl).
+     * Nur für SchuelerState verfügbar.
+     * @param client Der ServerClient
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
+     */
+    void getQuizTemplatesForSchueler(ServerClient client, long requestId) throws IOException;
 
     /**
      * Bewertet das Quiz und speichert es.
@@ -99,4 +109,84 @@ public interface ClientState {
      * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
      */
     void getOwnAccount(ServerClient client, long requestId) throws IOException;
+
+    // ======================================================
+    // FachbegriffItem-Verwaltung (nur für Lehrer)
+    // ======================================================
+
+    /**
+     * Sendet alle Fachbegriffe an den Lehrer-Client.
+     * Nur für LehrerState verfügbar.
+     * @param client Der ServerClient
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
+     */
+    void getAllFachbegriffe(ServerClient client, long requestId) throws IOException;
+
+    /**
+     * Erstellt einen neuen Fachbegriff.
+     * Nur für LehrerState verfügbar.
+     * @param client Der ServerClient
+     * @param item Der neue Fachbegriff
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
+     */
+    void createFachbegriff(ServerClient client, FachbegriffItem item, long requestId) throws IOException;
+
+    /**
+     * Aktualisiert einen bestehenden Fachbegriff.
+     * Nur für LehrerState verfügbar.
+     * @param client Der ServerClient
+     * @param id Die ID des zu aktualisierenden Fachbegriffs
+     * @param item Die aktualisierten Daten
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
+     */
+    void updateFachbegriff(ServerClient client, long id, FachbegriffItem item, long requestId) throws IOException;
+
+    /**
+     * Löscht einen Fachbegriff.
+     * Nur für LehrerState verfügbar.
+     * @param client Der ServerClient
+     * @param id Die ID des zu löschenden Fachbegriffs
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
+     */
+    void deleteFachbegriff(ServerClient client, long id, long requestId) throws IOException;
+
+    // ======================================================
+    // Quiz-Template-Verwaltung (nur für Lehrer)
+    // ======================================================
+
+    /**
+     * Sendet alle Quiz-Templates an den Lehrer-Client.
+     * Nur für LehrerState verfügbar.
+     * @param client Der ServerClient
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
+     */
+    void getAllQuizTemplates(ServerClient client, long requestId) throws IOException;
+
+    /**
+     * Erstellt ein neues Quiz-Template.
+     * Nur für LehrerState verfügbar.
+     * @param client Der ServerClient
+     * @param quiz Das neue Quiz-Template
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
+     */
+    void createQuizTemplate(ServerClient client, Quiz quiz, long requestId) throws IOException;
+
+    /**
+     * Aktualisiert ein bestehendes Quiz-Template.
+     * Nur für LehrerState verfügbar.
+     * @param client Der ServerClient
+     * @param id Die ID des zu aktualisierenden Quiz-Templates
+     * @param quiz Die aktualisierten Daten
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
+     */
+    void updateQuizTemplate(ServerClient client, long id, Quiz quiz, long requestId) throws IOException;
+
+    /**
+     * Löscht ein Quiz-Template.
+     * Nur für LehrerState verfügbar.
+     * @param client Der ServerClient
+     * @param id Die ID des zu löschenden Quiz-Templates
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
+     */
+    void deleteQuizTemplate(ServerClient client, long id, long requestId) throws IOException;
 }

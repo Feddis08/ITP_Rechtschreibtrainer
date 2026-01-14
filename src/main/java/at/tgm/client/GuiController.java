@@ -7,6 +7,7 @@ import at.tgm.network.packets.C2SGETAllSchueler;
 import at.tgm.network.packets.C2SGETOwnAccount;
 import at.tgm.network.packets.C2SGETSchuelerStats;
 import at.tgm.network.packets.C2SINITQuiz;
+import at.tgm.network.packets.C2SSTARTQuizWithTemplate;
 import at.tgm.network.packets.S2CPOSTAllSchueler;
 import at.tgm.network.packets.S2CPOSTOwnAccount;
 import at.tgm.network.packets.S2CPOSTStats;
@@ -70,13 +71,38 @@ public class GuiController {
 
     // Wird vom Dashboard aufgerufen, wenn der Benutzer im Menü "Quiz starten" klickt
     public void onQuizMenuClicked() {
-        logger.info("Quiz-Menü geklickt, sende Quiz-Initialisierungs-Paket");
+        logger.info("Quiz-Menü geklickt, zeige Template-Auswahl");
+        
+        // Zeige Template-Auswahl-Dialog
+        if (dashboardFrame != null) {
+            at.tgm.client.quiz.QuizTemplateAuswahlDialog dialog = 
+                new at.tgm.client.quiz.QuizTemplateAuswahlDialog(dashboardFrame);
+            dialog.setVisible(true);
+            
+            Long templateId = dialog.getSelectedTemplateId();
+            if (templateId != null) {
+                // Starte Quiz mit ausgewähltem Template
+                startQuizWithTemplate(templateId);
+            }
+        }
+    }
+
+    private void startQuizWithTemplate(long templateId) {
+        logger.info("Starte Quiz mit Template-ID: {}", templateId);
         try {
-            C2SINITQuiz packet = new C2SINITQuiz();
+            C2SSTARTQuizWithTemplate packet = new C2SSTARTQuizWithTemplate(templateId);
             ClientNetworkController.socketClient.send(packet);
-            logger.debug("Quiz-Initialisierungs-Paket gesendet");
+            logger.debug("Quiz-Start-Paket mit Template-ID {} gesendet", templateId);
         } catch (IOException e) {
-            logger.error("Fehler beim Senden des Quiz-Initialisierungs-Pakets", e);
+            logger.error("Fehler beim Senden des Quiz-Start-Pakets", e);
+            if (dashboardFrame != null) {
+                javax.swing.JOptionPane.showMessageDialog(
+                    dashboardFrame,
+                    "Fehler beim Starten des Quiz: " + e.getMessage(),
+                    "Fehler",
+                    javax.swing.JOptionPane.ERROR_MESSAGE
+                );
+            }
         }
     }
     public void showStats(Quiz[] quizzes) {

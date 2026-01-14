@@ -58,16 +58,80 @@ public class SchuelerState implements ClientState {
      * Startet ein neues Quiz.
      */
     @Override
-    public void startQuiz(ServerClient client) throws IOException {
+    public void startQuiz(ServerClient client, long templateId) throws IOException {
         String username = client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown";
-        logger.info("Starte Quiz für Schüler: {}", username);
+        logger.info("Starte Quiz für Schüler: {} (Template-ID: {})", username, templateId);
 
-        Quiz quiz = new Quiz(10, System.currentTimeMillis());
+        Quiz quiz;
+        if (templateId > 0) {
+            // Quiz aus Template erstellen
+            Quiz template = Server.findQuizTemplateById(templateId);
+            if (template == null) {
+                logger.warn("Quiz-Template mit ID {} nicht gefunden für Schüler '{}'", templateId, username);
+                throw new IllegalArgumentException("Quiz-Template nicht gefunden");
+            }
+
+            // Erstelle neues Quiz aus Template
+            FachbegriffItem[] templateItems = template.getItems();
+            if (templateItems == null || templateItems.length == 0) {
+                logger.warn("Quiz-Template mit ID {} hat keine Items für Schüler '{}'", templateId, username);
+                throw new IllegalArgumentException("Quiz-Template hat keine Items");
+            }
+
+            // Kopiere Items aus Template (tiefe Kopie, um sicherzustellen, dass Änderungen am Quiz das Template nicht beeinflussen)
+            FachbegriffItem[] quizItems = new FachbegriffItem[templateItems.length];
+            for (int i = 0; i < templateItems.length; i++) {
+                if (templateItems[i] != null) {
+                    quizItems[i] = templateItems[i];
+                }
+            }
+
+            // Erstelle Quiz direkt mit Items (ohne getRandomItems() Aufruf)
+            quiz = new Quiz(quizItems, System.currentTimeMillis());
+            quiz.setName(template.getName()); // Name vom Template übernehmen
+        } else {
+            // Zufälliges Quiz (Legacy-Verhalten)
+            quiz = new Quiz(10, System.currentTimeMillis());
+        }
+
         ((Schueler) client.getNutzer()).setQuiz(quiz);
         logger.debug("Quiz erstellt mit {} Items", quiz.getCensoredItems() != null ? quiz.getCensoredItems().length : 0);
 
         client.send(new S2CPOSTQuiz(quiz.getCensoredItems()));
         logger.info("Quiz-Paket an Schüler '{}' gesendet", username);
+    }
+
+    @Override
+    public void getQuizTemplatesForSchueler(ServerClient client, long requestId) throws IOException {
+        if (client == null) {
+            throw new IllegalArgumentException("Client darf nicht null sein");
+        }
+
+        Quiz[] templates = Server.quizTemplates != null ? Server.quizTemplates : new Quiz[0];
+        
+        // Filtere null-Einträge heraus
+        int count = 0;
+        for (Quiz quiz : templates) {
+            if (quiz != null) count++;
+        }
+        
+        Quiz[] filtered = new Quiz[count];
+        int index = 0;
+        for (Quiz quiz : templates) {
+            if (quiz != null) {
+                filtered[index++] = quiz;
+            }
+        }
+
+        logger.info("Sende {} Quiz-Templates an Schüler '{}' (Request-ID: {})", 
+                   filtered.length, 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown",
+                   requestId);
+        
+        at.tgm.network.packets.S2CPOSTAllQuizTemplates response = new at.tgm.network.packets.S2CPOSTAllQuizTemplates(filtered);
+        response.setRequestId(requestId);
+        client.send(response);
+        logger.debug("Quiz-Templates erfolgreich an Schüler gesendet");
     }
 
     /**
@@ -257,5 +321,69 @@ public class SchuelerState implements ClientState {
 
     private String safe(String s) {
         return s == null ? "" : s.trim();
+    }
+
+    // ======================================================
+    // FachbegriffItem-Verwaltung (nur für Lehrer)
+    // ======================================================
+
+    @Override
+    public void getAllFachbegriffe(ServerClient client, long requestId) throws IOException {
+        logger.warn("Schüler '{}' versuchte, Fachbegriffe abzurufen (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Schüler können keine Fachbegriffe abrufen");
+    }
+
+    @Override
+    public void createFachbegriff(ServerClient client, FachbegriffItem item, long requestId) throws IOException {
+        logger.warn("Schüler '{}' versuchte, Fachbegriff zu erstellen (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Schüler können keine Fachbegriffe erstellen");
+    }
+
+    @Override
+    public void updateFachbegriff(ServerClient client, long id, FachbegriffItem item, long requestId) throws IOException {
+        logger.warn("Schüler '{}' versuchte, Fachbegriff zu aktualisieren (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Schüler können keine Fachbegriffe aktualisieren");
+    }
+
+    @Override
+    public void deleteFachbegriff(ServerClient client, long id, long requestId) throws IOException {
+        logger.warn("Schüler '{}' versuchte, Fachbegriff zu löschen (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Schüler können keine Fachbegriffe löschen");
+    }
+
+    // ======================================================
+    // Quiz-Template-Verwaltung (nur für Lehrer)
+    // ======================================================
+
+    @Override
+    public void getAllQuizTemplates(ServerClient client, long requestId) throws IOException {
+        logger.warn("Schüler '{}' versuchte, Quiz-Templates abzurufen (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Schüler können keine Quiz-Templates abrufen");
+    }
+
+    @Override
+    public void createQuizTemplate(ServerClient client, Quiz quiz, long requestId) throws IOException {
+        logger.warn("Schüler '{}' versuchte, QuizTemplate zu erstellen (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Schüler können keine Quiz-Templates erstellen");
+    }
+
+    @Override
+    public void updateQuizTemplate(ServerClient client, long id, Quiz quiz, long requestId) throws IOException {
+        logger.warn("Schüler '{}' versuchte, QuizTemplate zu aktualisieren (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Schüler können keine Quiz-Templates aktualisieren");
+    }
+
+    @Override
+    public void deleteQuizTemplate(ServerClient client, long id, long requestId) throws IOException {
+        logger.warn("Schüler '{}' versuchte, QuizTemplate zu löschen (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Schüler können keine Quiz-Templates löschen");
     }
 }

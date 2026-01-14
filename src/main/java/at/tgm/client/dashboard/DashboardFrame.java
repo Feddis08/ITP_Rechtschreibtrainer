@@ -41,6 +41,10 @@ public class DashboardFrame extends JFrame {
     private SchuelerAnlegenPanel schuelerAnlegenPanel;
     private Schueler currentViewedSchueler; // Für Navigation zurück
 
+    // Neue Panels für Lehrer
+    private FachbegriffeVerwaltungPanel fachbegriffeVerwaltungPanel;
+    private QuizTemplatesVerwaltungPanel quizTemplatesVerwaltungPanel;
+
     // =========================
     // Öffentliche API-Methoden
     // =========================
@@ -140,6 +144,36 @@ public class DashboardFrame extends JFrame {
     
     public GuiController getController() {
         return controller;
+    }
+
+    // ======================================================
+    // Fachbegriffe-Verwaltung
+    // ======================================================
+
+    public void showFachbegriffeVerwaltung() {
+        if (fachbegriffeVerwaltungPanel == null) {
+            fachbegriffeVerwaltungPanel = new FachbegriffeVerwaltungPanel(this);
+            contentPanel.add(fachbegriffeVerwaltungPanel, "FACHBEGRIFFE_VERWALTUNG");
+        }
+
+        showCard("FACHBEGRIFFE_VERWALTUNG");
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
+    // ======================================================
+    // Quiz-Templates-Verwaltung
+    // ======================================================
+
+    public void showQuizTemplatesVerwaltung() {
+        if (quizTemplatesVerwaltungPanel == null) {
+            quizTemplatesVerwaltungPanel = new QuizTemplatesVerwaltungPanel(this);
+            contentPanel.add(quizTemplatesVerwaltungPanel, "QUIZ_TEMPLATES_VERWALTUNG");
+        }
+
+        showCard("QUIZ_TEMPLATES_VERWALTUNG");
+        contentPanel.revalidate();
+        contentPanel.repaint();
     }
     
     /**
@@ -327,7 +361,7 @@ public class DashboardFrame extends JFrame {
         return side;
     }
 
-    // Sidebar für Lehrer: Schülerliste + Beenden
+    // Sidebar für Lehrer: Schülerliste + Lernkarten + Quiz-Templates + Beenden
     private JComponent buildLehrerSidebar() {
         JPanel side = createSidebarBase();
 
@@ -342,6 +376,16 @@ public class DashboardFrame extends JFrame {
 
         side.add(createMenuButton("Schüler anlegen", () -> {
             showSchuelerAnlegen();
+        }));
+        side.add(Box.createRigidArea(new Dimension(0, 8)));
+
+        side.add(createMenuButton("Lernkarten", () -> {
+            showFachbegriffeVerwaltung();
+        }));
+        side.add(Box.createRigidArea(new Dimension(0, 8)));
+
+        side.add(createMenuButton("Quiz-Templates", () -> {
+            showQuizTemplatesVerwaltung();
         }));
         side.add(Box.createVerticalGlue());
 

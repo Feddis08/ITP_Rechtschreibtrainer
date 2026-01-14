@@ -2,6 +2,7 @@ package at.tgm.objects;
 
 public class FachbegriffItem extends SendableObject{
 
+    private long id; // Eindeutige ID (Timestamp)
     private String word; // der Fachbegriff zum wissen
     private String userWord; // die eingegebene Antwort des Schülers
     private int level;
@@ -10,6 +11,7 @@ public class FachbegriffItem extends SendableObject{
     private  String phrase; // komplette phrase
 
     public FachbegriffItem(String word, int level, int points, String phrase) {
+        this.id = System.currentTimeMillis(); // Timestamp als ID
         this.word = word;
         this.level = level;
         this.points = points;
@@ -18,6 +20,16 @@ public class FachbegriffItem extends SendableObject{
     }
 
     public FachbegriffItem(String word, int level, int points, int maxPoints, String phrase) {
+        this.id = System.currentTimeMillis(); // Timestamp als ID
+        this.word = word;
+        this.level = level;
+        this.points = points;
+        this.maxPoints = maxPoints;
+        this.phrase = phrase;
+    }
+
+    public FachbegriffItem(long id, String word, int level, int points, int maxPoints, String phrase) {
+        this.id = id;
         this.word = word;
         this.level = level;
         this.points = points;
@@ -59,7 +71,7 @@ public class FachbegriffItem extends SendableObject{
 
 
     public FachbegriffItem buildCensoredItem(){
-        return new FachbegriffItem(null, this.level, this.points, this.maxPoints, this.phrase);
+        return new FachbegriffItem(this.id, null, this.level, this.points, this.maxPoints, this.phrase);
     }
 
     public void setLevel(int level) {
@@ -76,5 +88,13 @@ public class FachbegriffItem extends SendableObject{
 
     public void setPhrase(String phrase) {
         this.phrase = phrase;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 }
