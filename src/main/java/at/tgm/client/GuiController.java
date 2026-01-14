@@ -4,13 +4,17 @@ import at.tgm.client.ClientNetworkController;
 import at.tgm.client.anmeldung.AnmeldeController;
 import at.tgm.client.dashboard.DashboardFrame;
 import at.tgm.network.packets.C2SGETAllSchueler;
+import at.tgm.network.packets.C2SGETAllLehrer;
 import at.tgm.network.packets.C2SGETOwnAccount;
 import at.tgm.network.packets.C2SGETSchuelerStats;
-import at.tgm.network.packets.C2SINITQuiz;
 import at.tgm.network.packets.C2SSTARTQuizWithTemplate;
+import at.tgm.network.packets.C2SToggleLehrerStatus;
+import at.tgm.network.packets.C2SDeleteLehrer;
 import at.tgm.network.packets.S2CPOSTAllSchueler;
+import at.tgm.network.packets.S2CPOSTAllLehrer;
 import at.tgm.network.packets.S2CPOSTOwnAccount;
 import at.tgm.network.packets.S2CPOSTStats;
+import at.tgm.network.packets.S2CResponseLehrerOperation;
 import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Nutzer;
 import at.tgm.objects.Quiz;
@@ -171,6 +175,166 @@ public class GuiController {
         if (dashboardFrame != null) {
             dashboardFrame.showSchuelerList(schueler);
         }
+    }
+
+    // Lehrer klickt im Menü auf "Lehrer" (für SysAdmin)
+    public void onLehrerMenuClicked() {
+        logger.info("Lehrer-Menü geklickt, sende Anfrage für Lehrerliste");
+        
+        // In separatem Thread ausführen, um UI nicht zu blockieren
+        new Thread(() -> {
+            try {
+                C2SGETAllLehrer request = new C2SGETAllLehrer();
+                S2CPOSTAllLehrer response = ClientNetworkController.socketClient
+                    .getChannel()
+                    .sendAndWait(
+                        request,
+                        S2CPOSTAllLehrer.class,
+                        5,
+                        TimeUnit.SECONDS
+                    );
+                
+                // UI-Update im EDT (Event Dispatch Thread)
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    at.tgm.objects.Lehrer[] lehrer = response.getLehrer();
+                    showLehrerList(lehrer);
+                });
+                
+            } catch (TimeoutException e) {
+                logger.error("Timeout beim Laden der Lehrerliste", e);
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    if (dashboardFrame != null) {
+                        javax.swing.JOptionPane.showMessageDialog(
+                            dashboardFrame,
+                            "Lehrerliste konnte nicht geladen werden (Timeout).",
+                            "Fehler",
+                            javax.swing.JOptionPane.ERROR_MESSAGE
+                        );
+                    }
+                });
+            } catch (IOException e) {
+                logger.error("Fehler beim Laden der Lehrerliste", e);
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    if (dashboardFrame != null) {
+                        javax.swing.JOptionPane.showMessageDialog(
+                            dashboardFrame,
+                            "Fehler beim Laden der Lehrerliste: " + e.getMessage(),
+                            "Fehler",
+                            javax.swing.JOptionPane.ERROR_MESSAGE
+                        );
+                    }
+                });
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.error("Unterbrochen beim Laden der Lehrerliste", e);
+            }
+        }).start();
+    }
+
+    // Wird vom Netzwerkcode aufgerufen, wenn die Lehrerliste ankommt
+    public void showLehrerList(at.tgm.objects.Lehrer[] lehrer) {
+        logger.info("Lehrerliste erhalten ({} Lehrer)", lehrer != null ? lehrer.length : 0);
+        if (dashboardFrame != null) {
+            dashboardFrame.showLehrerList(lehrer);
+        }
+    }
+
+    public void toggleLehrerStatus(String lehrerUsername) {
+        logger.info("Toggle Lehrer-Status für: {}", lehrerUsername);
+        
+        new Thread(() -> {
+            try {
+                C2SToggleLehrerStatus request = new C2SToggleLehrerStatus(lehrerUsername);
+                S2CResponseLehrerOperation response = ClientNetworkController.socketClient
+                    .getChannel()
+                    .sendAndWait(
+                        request,
+                        S2CResponseLehrerOperation.class,
+                        5,
+                        TimeUnit.SECONDS
+                    );
+                
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    if (response.isSuccess()) {
+                        javax.swing.JOptionPane.showMessageDialog(
+                            dashboardFrame,
+                            response.getMessage(),
+                            "Erfolg",
+                            javax.swing.JOptionPane.INFORMATION_MESSAGE
+                        );
+                        // Aktualisiere Lehrerliste
+                        onLehrerMenuClicked();
+                    } else {
+                        javax.swing.JOptionPane.showMessageDialog(
+                            dashboardFrame,
+                            response.getMessage(),
+                            "Fehler",
+                            javax.swing.JOptionPane.ERROR_MESSAGE
+                        );
+                    }
+                });
+                
+            } catch (Exception e) {
+                logger.error("Fehler beim Toggle Lehrer-Status", e);
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    javax.swing.JOptionPane.showMessageDialog(
+                        dashboardFrame,
+                        "Fehler: " + e.getMessage(),
+                        "Fehler",
+                        javax.swing.JOptionPane.ERROR_MESSAGE
+                    );
+                });
+            }
+        }).start();
+    }
+
+    public void deleteLehrer(String lehrerUsername) {
+        logger.info("Lösche Lehrer: {}", lehrerUsername);
+        
+        new Thread(() -> {
+            try {
+                C2SDeleteLehrer request = new C2SDeleteLehrer(lehrerUsername);
+                S2CResponseLehrerOperation response = ClientNetworkController.socketClient
+                    .getChannel()
+                    .sendAndWait(
+                        request,
+                        S2CResponseLehrerOperation.class,
+                        5,
+                        TimeUnit.SECONDS
+                    );
+                
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    if (response.isSuccess()) {
+                        javax.swing.JOptionPane.showMessageDialog(
+                            dashboardFrame,
+                            response.getMessage(),
+                            "Erfolg",
+                            javax.swing.JOptionPane.INFORMATION_MESSAGE
+                        );
+                        // Aktualisiere Lehrerliste
+                        onLehrerMenuClicked();
+                    } else {
+                        javax.swing.JOptionPane.showMessageDialog(
+                            dashboardFrame,
+                            response.getMessage(),
+                            "Fehler",
+                            javax.swing.JOptionPane.ERROR_MESSAGE
+                        );
+                    }
+                });
+                
+            } catch (Exception e) {
+                logger.error("Fehler beim Löschen des Lehrers", e);
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    javax.swing.JOptionPane.showMessageDialog(
+                        dashboardFrame,
+                        "Fehler: " + e.getMessage(),
+                        "Fehler",
+                        javax.swing.JOptionPane.ERROR_MESSAGE
+                    );
+                });
+            }
+        }).start();
     }
 
 

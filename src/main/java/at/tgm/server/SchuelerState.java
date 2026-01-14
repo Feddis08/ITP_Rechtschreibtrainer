@@ -386,4 +386,36 @@ public class SchuelerState implements ClientState {
                    client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
         throw new UnsupportedOperationException("Schüler können keine Quiz-Templates löschen");
     }
+
+    // ======================================================
+    // Lehrer-Verwaltung (nur für SysAdmin)
+    // ======================================================
+
+    @Override
+    public void postAllLehrer(ServerClient client, long requestId) throws IOException {
+        logger.warn("Schüler '{}' versuchte, Lehrerliste abzurufen (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Schüler können keine Lehrerliste abrufen");
+    }
+
+    @Override
+    public void addLehrer(ServerClient client, at.tgm.objects.Lehrer lehrer, long requestId) throws IOException {
+        logger.warn("Schüler '{}' versuchte, Lehrer hinzuzufügen (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Schüler können keine Lehrer hinzufügen");
+    }
+
+    @Override
+    public void toggleLehrerStatus(ServerClient client, String lehrerUsername, long requestId) throws IOException {
+        logger.warn("Schüler '{}' versuchte, Lehrer-Status zu ändern (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Schüler können keine Lehrer-Status ändern");
+    }
+
+    @Override
+    public void deleteLehrer(ServerClient client, String lehrerUsername, long requestId) throws IOException {
+        logger.warn("Schüler '{}' versuchte, Lehrer zu löschen (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Schüler können keine Lehrer löschen");
+    }
 }

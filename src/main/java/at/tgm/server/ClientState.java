@@ -189,4 +189,43 @@ public interface ClientState {
      * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
      */
     void deleteQuizTemplate(ServerClient client, long id, long requestId) throws IOException;
+
+    // ======================================================
+    // Lehrer-Verwaltung (nur für SysAdmin)
+    // ======================================================
+
+    /**
+     * Sendet alle Lehrer an den SysAdmin-Client.
+     * Nur für ServerSysAdminState verfügbar.
+     * @param client Der ServerClient
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
+     */
+    void postAllLehrer(ServerClient client, long requestId) throws IOException;
+
+    /**
+     * Fügt einen neuen Lehrer zum System hinzu.
+     * Nur für ServerSysAdminState verfügbar.
+     * @param client Der ServerClient
+     * @param lehrer Der neue Lehrer
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
+     */
+    void addLehrer(ServerClient client, at.tgm.objects.Lehrer lehrer, long requestId) throws IOException;
+
+    /**
+     * Aktiviert oder deaktiviert einen Lehrer-Account.
+     * Nur für ServerSysAdminState verfügbar.
+     * @param client Der ServerClient
+     * @param lehrerUsername Der Benutzername des Lehrers
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
+     */
+    void toggleLehrerStatus(ServerClient client, String lehrerUsername, long requestId) throws IOException;
+
+    /**
+     * Löscht einen Lehrer-Account komplett.
+     * Nur für ServerSysAdminState verfügbar.
+     * @param client Der ServerClient
+     * @param lehrerUsername Der Benutzername des Lehrers
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
+     */
+    void deleteLehrer(ServerClient client, String lehrerUsername, long requestId) throws IOException;
 }

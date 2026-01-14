@@ -7,6 +7,7 @@ import at.tgm.client.quiz.QuizPanel;
 import at.tgm.network.packets.C2SGETStats;
 import at.tgm.network.packets.S2CPOSTStats;
 import at.tgm.objects.*;
+import at.tgm.objects.SysAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +45,10 @@ public class DashboardFrame extends JFrame {
     // Neue Panels für Lehrer
     private FachbegriffeVerwaltungPanel fachbegriffeVerwaltungPanel;
     private QuizTemplatesVerwaltungPanel quizTemplatesVerwaltungPanel;
+    
+    // Panels für SysAdmin (Lehrer-Verwaltung)
+    private LehrerListPanel lehrerListPanel;
+    private LehrerAnlegenPanel lehrerAnlegenPanel;
 
     // =========================
     // Öffentliche API-Methoden
@@ -198,6 +203,46 @@ public class DashboardFrame extends JFrame {
         contentPanel.repaint();
     }
 
+    // ======================================================
+    // Lehrer-Verwaltung (für SysAdmin)
+    // ======================================================
+
+    public void showLehrerList(at.tgm.objects.Lehrer[] lehrer) {
+        if (lehrerListPanel != null) {
+            contentPanel.remove(lehrerListPanel);
+        }
+
+        lehrerListPanel = new LehrerListPanel(lehrer, this);
+        contentPanel.add(lehrerListPanel, "LEHRER_LIST");
+
+        showCard("LEHRER_LIST");
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
+    public void showLehrerAnlegen() {
+        if (lehrerAnlegenPanel == null) {
+            lehrerAnlegenPanel = new LehrerAnlegenPanel(this, controller);
+            contentPanel.add(lehrerAnlegenPanel, "LEHRER_ANLEGEN");
+        }
+
+        showCard("LEHRER_ANLEGEN");
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
+    public void toggleLehrerStatus(String lehrerUsername) {
+        if (controller != null) {
+            controller.toggleLehrerStatus(lehrerUsername);
+        }
+    }
+
+    public void deleteLehrer(String lehrerUsername) {
+        if (controller != null) {
+            controller.deleteLehrer(lehrerUsername);
+        }
+    }
+
     // =========================
 
     public DashboardFrame(Nutzer nutzer) {
@@ -318,6 +363,8 @@ public class DashboardFrame extends JFrame {
             return buildSchuelerSidebar();
         } else if (nutzer instanceof Lehrer) {
             return buildLehrerSidebar();
+        } else if (nutzer instanceof SysAdmin) {
+            return buildSysAdminSidebar();
         } else {
             return buildDefaultSidebar();
         }
@@ -393,6 +440,27 @@ public class DashboardFrame extends JFrame {
         return side;
     }
 
+    // Sidebar für SysAdmin: Lehrer-Verwaltung + Beenden
+    private JComponent buildSysAdminSidebar() {
+        JPanel side = createSidebarBase();
+
+        side.add(createMenuButton("Lehrer", () -> {
+            showCard("LEHRER_LOADING");
+            if (controller != null) {
+                controller.onLehrerMenuClicked();
+            }
+        }));
+        side.add(Box.createRigidArea(new Dimension(0, 8)));
+
+        side.add(createMenuButton("Lehrer anlegen", () -> {
+            showLehrerAnlegen();
+        }));
+        side.add(Box.createVerticalGlue());
+
+        side.add(createMenuButton("Beenden", this::exitApp));
+        return side;
+    }
+
     // Fallback, falls mal ein anderer Nutzertyp kommt
     private JComponent buildDefaultSidebar() {
         JPanel side = createSidebarBase();
@@ -430,6 +498,10 @@ public class DashboardFrame extends JFrame {
         panel.add(buildPlaceholderPanel("Schülerliste wird geladen...", """
                 Bitte warten...
                 """), "SCHUELER_LOADING");
+
+        panel.add(buildPlaceholderPanel("Lehrerliste wird geladen...", """
+                Bitte warten...
+                """), "LEHRER_LOADING");
 
         ((CardLayout) panel.getLayout()).show(panel, "HOME");
         return panel;

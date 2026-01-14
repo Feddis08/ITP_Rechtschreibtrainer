@@ -6,6 +6,7 @@ import at.tgm.objects.Nutzer;
 import at.tgm.objects.NutzerStatus;
 import at.tgm.objects.Quiz;
 import at.tgm.objects.Schueler;
+import at.tgm.objects.SysAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +32,7 @@ public class ServerInitializer {
         // Erstelle und konfiguriere initiale Nutzer
         initializeSchueler();
         initializeLehrer();
+        initializeSysAdmin();
 
         // Erstelle initiale Lernkarten und Quiz-Templates
         initializeFachbegriffe();
@@ -95,6 +97,15 @@ public class ServerInitializer {
         Lehrer lehrer = new Lehrer("l", "123");
         Server.addNutzer(lehrer);
         logger.info("Lehrer '{}' wurde hinzugefügt", lehrer.getUsername());
+    }
+
+    /**
+     * Erstellt und konfiguriert den initialen SysAdmin.
+     */
+    private static void initializeSysAdmin() {
+        SysAdmin sysAdmin = new SysAdmin("admin", "admin");
+        Server.addNutzer(sysAdmin);
+        logger.info("SysAdmin '{}' wurde hinzugefügt", sysAdmin.getUsername());
     }
 
     /**

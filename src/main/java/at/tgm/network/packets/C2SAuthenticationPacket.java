@@ -5,10 +5,12 @@ import at.tgm.network.core.RequestPacket;
 import at.tgm.objects.Lehrer;
 import at.tgm.objects.Nutzer;
 import at.tgm.objects.Schueler;
+import at.tgm.objects.SysAdmin;
 import at.tgm.server.Server;
 import at.tgm.network.core.SocketClient;
 import at.tgm.server.LehrerState;
 import at.tgm.server.SchuelerState;
+import at.tgm.server.ServerSysAdminState;
 import at.tgm.server.ServerClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,6 +108,9 @@ public class C2SAuthenticationPacket implements RequestPacket {
                     } else if (n instanceof Lehrer) {
                         serverClient.setState(new LehrerState());
                         logger.debug("LehrerState gesetzt für: {}", this.username);
+                    } else if (n instanceof SysAdmin) {
+                        serverClient.setState(new ServerSysAdminState());
+                        logger.debug("ServerSysAdminState gesetzt für: {}", this.username);
                     } else {
                         logger.warn("Unbekannter Nutzertyp: {} für Benutzer: {}", n.getClass().getName(), this.username);
                         S2CLoginFailedPacket response = new S2CLoginFailedPacket();

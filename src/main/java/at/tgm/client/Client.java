@@ -59,6 +59,7 @@ public class Client {
     private static TestLoginCallback testCallback = null;
     private static TestQuizCallback testQuizCallback = null;
     private static TestSchuelerListCallback testSchuelerListCallback = null;
+    private static TestLehrerListCallback testLehrerListCallback = null;
     
     /**
      * Sets a test callback for headless testing. Should only be used in test code.
@@ -76,6 +77,10 @@ public class Client {
         testSchuelerListCallback = callback;
     }
     
+    public static void setTestLehrerListCallback(TestLehrerListCallback callback) {
+        testLehrerListCallback = callback;
+    }
+    
     public interface TestLoginCallback {
         void onLogin(Nutzer n);
         void onLoginFailed();
@@ -88,6 +93,10 @@ public class Client {
     
     public interface TestSchuelerListCallback {
         void onSchuelerListReceived(at.tgm.objects.Schueler[] schueler);
+    }
+    
+    public interface TestLehrerListCallback {
+        void onLehrerListReceived(at.tgm.objects.Lehrer[] lehrer);
     }
 
     // Wird vom Netzwerkcode aufgerufen
@@ -168,6 +177,22 @@ public class Client {
             if (dashboardFrame != null) {
                 dashboardFrame.showSchuelerList(schueler);
             }
+        });
+    }
+
+    // Wird vom Netzwerkcode aufgerufen, wenn Lehrerliste kommt
+    public static void onLehrerListReceived(at.tgm.objects.Lehrer[] lehrer) {
+        logger.info("Lehrerliste erhalten: {} Lehrer", lehrer != null ? lehrer.length : 0);
+        
+        // If in test mode, route to test callback instead of GUI
+        if (testLehrerListCallback != null) {
+            testLehrerListCallback.onLehrerListReceived(lehrer);
+            return;
+        }
+        
+        // GUI-Operationen müssen im EDT (Event Dispatch Thread) ausgeführt werden
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            GUI.showLehrerList(lehrer);
         });
     }
 

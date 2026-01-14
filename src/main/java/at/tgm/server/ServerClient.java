@@ -146,4 +146,28 @@ public class ServerClient extends SocketClient {
         logger.debug("getQuizTemplatesForSchueler() aufgerufen mit Request-ID: {}", requestId);
         state.getQuizTemplatesForSchueler(this, requestId);
     }
+
+    // ======================================================
+    // Lehrer-Verwaltung (nur für SysAdmin)
+    // ======================================================
+
+    public void postAllLehrer(long requestId) throws IOException {
+        logger.debug("postAllLehrer() aufgerufen mit Request-ID: {}", requestId);
+        state.postAllLehrer(this, requestId);
+    }
+
+    public void addLehrer(at.tgm.objects.Lehrer lehrer, long requestId) throws IOException {
+        logger.debug("addLehrer() aufgerufen mit Request-ID: {}", requestId);
+        state.addLehrer(this, lehrer, requestId);
+    }
+
+    public void toggleLehrerStatus(String lehrerUsername, long requestId) throws IOException {
+        logger.debug("toggleLehrerStatus() aufgerufen für Lehrer '{}' mit Request-ID: {}", lehrerUsername, requestId);
+        state.toggleLehrerStatus(this, lehrerUsername, requestId);
+    }
+
+    public void deleteLehrer(String lehrerUsername, long requestId) throws IOException {
+        logger.debug("deleteLehrer() aufgerufen für Lehrer '{}' mit Request-ID: {}", lehrerUsername, requestId);
+        state.deleteLehrer(this, lehrerUsername, requestId);
+    }
 }

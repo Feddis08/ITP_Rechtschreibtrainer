@@ -91,6 +91,22 @@ public class NetworkSystem {
         PacketRegistry.registerPacket(C2SSTARTQuizWithTemplate.class); //34
         logger.debug("Paket registriert: C2SSTARTQuizWithTemplate (ID: 34)");
         
-        logger.info("NetworkSystem erfolgreich initialisiert, {} Pakete registriert", 35);
+        // Lehrer-Verwaltung (SysAdmin)
+        PacketRegistry.registerPacket(C2SGETAllLehrer.class); //35
+        logger.debug("Paket registriert: C2SGETAllLehrer (ID: 35)");
+        PacketRegistry.registerPacket(S2CPOSTAllLehrer.class); //36
+        logger.debug("Paket registriert: S2CPOSTAllLehrer (ID: 36)");
+        PacketRegistry.registerPacket(C2SPOSTLehrerVorschlag.class); //37
+        logger.debug("Paket registriert: C2SPOSTLehrerVorschlag (ID: 37)");
+        PacketRegistry.registerPacket(S2CResponseLehrerVorschlag.class); //38
+        logger.debug("Paket registriert: S2CResponseLehrerVorschlag (ID: 38)");
+        PacketRegistry.registerPacket(C2SToggleLehrerStatus.class); //39
+        logger.debug("Paket registriert: C2SToggleLehrerStatus (ID: 39)");
+        PacketRegistry.registerPacket(C2SDeleteLehrer.class); //40
+        logger.debug("Paket registriert: C2SDeleteLehrer (ID: 40)");
+        PacketRegistry.registerPacket(S2CResponseLehrerOperation.class); //41
+        logger.debug("Paket registriert: S2CResponseLehrerOperation (ID: 41)");
+        
+        logger.info("NetworkSystem erfolgreich initialisiert, {} Pakete registriert", 42);
     }
 }

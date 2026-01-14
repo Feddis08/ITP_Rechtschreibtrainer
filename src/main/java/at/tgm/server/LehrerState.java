@@ -704,4 +704,36 @@ public class LehrerState implements ClientState {
             client.send(response);
         }
     }
+
+    // ======================================================
+    // Lehrer-Verwaltung (nur für SysAdmin)
+    // ======================================================
+
+    @Override
+    public void postAllLehrer(ServerClient client, long requestId) throws IOException {
+        logger.warn("Lehrer '{}' versuchte, Lehrerliste abzurufen (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Lehrer können keine Lehrerliste abrufen");
+    }
+
+    @Override
+    public void addLehrer(ServerClient client, at.tgm.objects.Lehrer lehrer, long requestId) throws IOException {
+        logger.warn("Lehrer '{}' versuchte, Lehrer hinzuzufügen (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Lehrer können keine Lehrer hinzufügen");
+    }
+
+    @Override
+    public void toggleLehrerStatus(ServerClient client, String lehrerUsername, long requestId) throws IOException {
+        logger.warn("Lehrer '{}' versuchte, Lehrer-Status zu ändern (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Lehrer können keine Lehrer-Status ändern");
+    }
+
+    @Override
+    public void deleteLehrer(ServerClient client, String lehrerUsername, long requestId) throws IOException {
+        logger.warn("Lehrer '{}' versuchte, Lehrer zu löschen (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Lehrer können keine Lehrer löschen");
+    }
 }

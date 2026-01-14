@@ -163,4 +163,36 @@ public class UnauthenticatedState implements ClientState {
                    requestId, client.getSocket().getRemoteSocketAddress());
         throw new UnsupportedOperationException("Client ist nicht authentifiziert");
     }
+
+    // ======================================================
+    // Lehrer-Verwaltung (nur für SysAdmin)
+    // ======================================================
+
+    @Override
+    public void postAllLehrer(ServerClient client, long requestId) throws IOException {
+        logger.warn("Nicht authentifizierter Client versuchte, Lehrerliste abzurufen (Request-ID: {}): {}", 
+                   requestId, client.getSocket().getRemoteSocketAddress());
+        throw new UnsupportedOperationException("Client ist nicht authentifiziert");
+    }
+
+    @Override
+    public void addLehrer(ServerClient client, at.tgm.objects.Lehrer lehrer, long requestId) throws IOException {
+        logger.warn("Nicht authentifizierter Client versuchte, Lehrer hinzuzufügen (Request-ID: {}): {}", 
+                   requestId, client.getSocket().getRemoteSocketAddress());
+        throw new UnsupportedOperationException("Client ist nicht authentifiziert");
+    }
+
+    @Override
+    public void toggleLehrerStatus(ServerClient client, String lehrerUsername, long requestId) throws IOException {
+        logger.warn("Nicht authentifizierter Client versuchte, Lehrer-Status zu ändern (Request-ID: {}): {}", 
+                   requestId, client.getSocket().getRemoteSocketAddress());
+        throw new UnsupportedOperationException("Client ist nicht authentifiziert");
+    }
+
+    @Override
+    public void deleteLehrer(ServerClient client, String lehrerUsername, long requestId) throws IOException {
+        logger.warn("Nicht authentifizierter Client versuchte, Lehrer zu löschen (Request-ID: {}): {}", 
+                   requestId, client.getSocket().getRemoteSocketAddress());
+        throw new UnsupportedOperationException("Client ist nicht authentifiziert");
+    }
 }
