@@ -1,11 +1,8 @@
 package at.tgm.server;
 
 import at.tgm.objects.FachbegriffItem;
-import at.tgm.objects.Lehrer;
-import at.tgm.objects.NutzerStatus;
 import at.tgm.objects.Nutzer;
 import at.tgm.objects.Quiz;
-import at.tgm.objects.Schueler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,56 +32,8 @@ public class Server {
             }
         }
 
-        nutzers =  new Nutzer[1];
-        logger.debug("Nutzer-Array initialisiert");
-
-        Schueler felix = new Schueler("riemer", "123");
-
-        felix.setFirstName("Felix");
-        felix.setLastName("Riemer");
-        felix.setAge(17);
-        felix.setSchoolClass("3BHIT");
-
-// Darstellung
-        felix.setDisplayName("Felix R.");
-        felix.setBeschreibung("Tech enthusiast, Minecraft dev, Java enjoyer.");
-        felix.setStatus(NutzerStatus.ONLINE);
-
-// Kontakt
-        felix.setEmail("felix.riemer@example.com");
-        felix.setPhoneNumber("+43 660 1234567");
-
-// Profilbild
-        felix.setProfilePictureUrl("https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Minecraft-creeper-face.jpg/500px-Minecraft-creeper-face.jpg");
-
-        addNutzer(felix);
-        logger.info("Schüler '{}' wurde hinzugefügt", felix.getUsername());
-
-        Schueler matthias = new Schueler("wickenhauser", "123");
-
-        matthias.setFirstName("Matthias");
-        matthias.setLastName("Wickenhauser");
-        matthias.setAge(17);
-        matthias.setSchoolClass("3BHIT");
-
-// Darstellung
-        matthias.setDisplayName("Matthias W.");
-        matthias.setBeschreibung("Linux enjoyer, Network wizard, loyal HIT-Kollege.");
-        matthias.setStatus(NutzerStatus.ONLINE);
-
-// Kontakt
-        matthias.setEmail("matthias.wickenhauser@example.com");
-        matthias.setPhoneNumber("+43 660 9876543");
-
-// Profilbild (witzig aber neutral, gerne änderbar)
-        matthias.setProfilePictureUrl("https://upload.wikimedia.org/wikipedia/commons/5/59/Crystal_Project_penguin.png");
-
-        addNutzer(matthias);
-        logger.info("Schüler '{}' wurde hinzugefügt", matthias.getUsername());
-
-        Lehrer l = new Lehrer("l","123");
-        addNutzer(l);
-        logger.info("Lehrer '{}' wurde hinzugefügt", l.getUsername());
+        // Initialisiere Server-Datenstrukturen mit initialen Werten
+        ServerInitializer.initialize();
 
         logger.info("Starte Server auf Port {}", port);
         ServerNetworkController.start(port);

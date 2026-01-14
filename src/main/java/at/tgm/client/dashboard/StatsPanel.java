@@ -90,7 +90,16 @@ public class StatsPanel extends JPanel {
 
         Color statusColor = (percent >= 50) ? new Color(0, 180, 0) : new Color(200, 0, 0);
 
-        JLabel title = new JLabel("Quiz — " + (int) percent + "% erreicht");
+        // Quiz-Name anzeigen, falls vorhanden
+        String quizName = q.getName();
+        String titleText;
+        if (quizName != null && !quizName.trim().isEmpty()) {
+            titleText = quizName + " — " + (int) percent + "% erreicht";
+        } else {
+            titleText = "Quiz — " + (int) percent + "% erreicht";
+        }
+
+        JLabel title = new JLabel(titleText);
         title.setFont(new Font("Arial", Font.BOLD, 16));
         title.setForeground(statusColor);
 
