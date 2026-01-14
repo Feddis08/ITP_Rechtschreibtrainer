@@ -3,6 +3,18 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
+// Workaround für Shadow Plugin Kompatibilität mit Gradle 8.10+
+shadowJar {
+    archiveBaseName.set("itp-app")
+    archiveVersion.set("1.0")
+    archiveClassifier.set("")
+    manifest {
+        attributes 'Main-Class': 'at.tgm.Main'
+    }
+    // Vermeide Probleme mit META-INF Verzeichnissen
+    mergeServiceFiles()
+}
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
@@ -18,15 +30,6 @@ repositories {
 
 // Konfiguriere das normale JAR mit Main-Class
 jar {
-    manifest {
-        attributes 'Main-Class': 'at.tgm.Main'
-    }
-}
-
-shadowJar {
-    archiveBaseName.set("itp-app")
-    archiveVersion.set("1.0")
-    archiveClassifier.set("")
     manifest {
         attributes 'Main-Class': 'at.tgm.Main'
     }
@@ -90,4 +93,110 @@ task runServer(type: JavaExec) {
     description = 'Startet den Server'
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'at.tgm.server.Server'
+}
+
+// ============================================
+// Native Installer Builds (jpackage)
+// ============================================
+
+def appName = 'ITP-Rechtschreibtrainer-Client'
+def appVersion = '1.0'
+def vendor = 'TGM'
+def mainClass = 'at.tgm.Main'
+
+// Task zum Erstellen eines .dmg Installers für macOS
+task buildDmg(type: Exec) {
+    group = 'distribution'
+    description = 'Erstellt einen .dmg Installer für macOS'
+    
+    dependsOn shadowJar
+    
+    executable = 'jpackage'
+    
+    doFirst {
+        // Prüfe ob wir auf macOS sind
+        if (!System.getProperty('os.name').toLowerCase().contains('mac')) {
+            throw new GradleException('buildDmg kann nur auf macOS ausgeführt werden')
+        }
+        
+        // Lösche vorherige Builds
+        delete fileTree("${buildDir}/distributions") {
+            include "*.dmg"
+        }
+        
+        def mainJar = shadowJar.archiveFileName.get()
+        args = [
+            '--input', "${buildDir}/libs",
+            '--name', appName,
+            '--main-jar', mainJar,
+            '--main-class', mainClass,
+            '--app-version', appVersion,
+            '--vendor', vendor,
+            '--dest', "${buildDir}/distributions",
+            '--type', 'dmg',
+            '--java-options', '--add-opens=java.base/java.lang=ALL-UNNAMED',
+            '--java-options', '--add-opens=java.base/java.util=ALL-UNNAMED',
+            '--arguments', 'client'
+        ]
+    }
+    
+    doLast {
+        println "✅ .dmg Installer erstellt in: ${buildDir}/distributions/"
+    }
+}
+
+// Task zum Erstellen eines .exe Installers für Windows
+task buildExe(type: Exec) {
+    group = 'distribution'
+    description = 'Erstellt einen .exe Installer für Windows'
+    
+    dependsOn shadowJar
+    
+    executable = 'jpackage'
+    
+    doFirst {
+        // Prüfe ob wir auf Windows sind
+        if (!System.getProperty('os.name').toLowerCase().contains('windows')) {
+            throw new GradleException('buildExe kann nur auf Windows ausgeführt werden. Für Cross-Compilation siehe buildExeCrossPlatform')
+        }
+        
+        // Lösche vorherige Builds
+        delete fileTree("${buildDir}/distributions") {
+            include "*.exe"
+        }
+        
+        def mainJar = shadowJar.archiveFileName.get()
+        args = [
+            '--input', "${buildDir}/libs",
+            '--name', appName,
+            '--main-jar', mainJar,
+            '--main-class', mainClass,
+            '--app-version', appVersion,
+            '--vendor', vendor,
+            '--dest', "${buildDir}/distributions",
+            '--type', 'exe',
+            '--win-dir-chooser',
+            '--win-menu',
+            '--win-shortcut',
+            '--java-options', '--add-opens=java.base/java.lang=ALL-UNNAMED',
+            '--java-options', '--add-opens=java.base/java.util=ALL-UNNAMED',
+            '--arguments', 'client'
+        ]
+    }
+    
+    doLast {
+        println "✅ .exe Installer erstellt in: ${buildDir}/distributions/"
+    }
+}
+
+// Task zum Erstellen beider Installer (nur auf macOS möglich)
+task buildAllInstallers {
+    group = 'distribution'
+    description = 'Erstellt alle verfügbaren Installer'
+    dependsOn buildDmg
+    
+    doLast {
+        println "⚠️  Hinweis: .exe kann nur auf Windows erstellt werden."
+        println "   Für Windows-Installer bitte 'gradlew buildExe' auf einem Windows-System ausführen."
+    }
 }
