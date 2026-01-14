@@ -3,6 +3,7 @@ package at.tgm.objects;
 public class FachbegriffItem extends SendableObject{
 
     private String word; // der Fachbegriff zum wissen
+    private String userWord; // die eingegebene Antwort des Schülers
     private int level;
     private int points; // erreichte Punkte
     private int maxPoints; // maximale Punkte
@@ -30,6 +31,14 @@ public class FachbegriffItem extends SendableObject{
 
     public String getWord() {
         return word;
+    }
+
+    public String getUserWord() {
+        return userWord;
+    }
+
+    public void setUserWord(String userWord) {
+        this.userWord = userWord;
     }
 
     public int getLevel() {

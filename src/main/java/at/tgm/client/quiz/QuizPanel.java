@@ -241,7 +241,9 @@ public class QuizPanel extends JPanel {
         // Verwende direkt die Daten vom Server (result)
         String phrase = (result != null) ? result.getPhrase() : (original != null ? original.getPhrase() : "");
         String correctWord = (result != null && result.getWord() != null) ? result.getWord() : "—";
-        String userWord = (original != null && original.getWord() != null) ? original.getWord() : "—";
+        // Verwende userWord aus dem result-Item (vom Server gespeichert), fallback zu original für Rückwärtskompatibilität
+        String userWord = (result != null && result.getUserWord() != null) ? result.getUserWord() 
+                        : (original != null && original.getWord() != null) ? original.getWord() : "—";
 
         // Punkte direkt vom Server-Item verwenden
         int earnedPoints = (result != null) ? result.getPoints() : 0;

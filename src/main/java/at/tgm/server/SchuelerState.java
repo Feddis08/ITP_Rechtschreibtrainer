@@ -137,6 +137,9 @@ public class SchuelerState implements ClientState {
 
             totalPoints += earned;
 
+            // Speichere die eingegebene Antwort des Schülers, bevor wir word überschreiben
+            userOne.setUserWord(user);
+
             // Dem Client das richtige Wort + erreichte Punkte + maxPoints zurückgeben
             userOne.setPoints(earned);
             userOne.setMaxPoints(full);
