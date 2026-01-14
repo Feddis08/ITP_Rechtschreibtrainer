@@ -78,4 +78,11 @@ public class UnauthenticatedState implements ClientState {
                    requestId, client.getSocket().getRemoteSocketAddress());
         throw new UnsupportedOperationException("Client ist nicht authentifiziert");
     }
+
+    @Override
+    public void setSchuelerNote(ServerClient client, String schuelerUsername, at.tgm.objects.Note note, long requestId) throws IOException {
+        logger.warn("Nicht authentifizierter Client versuchte, Note zu setzen (Request-ID: {}): {}", 
+                   requestId, client.getSocket().getRemoteSocketAddress());
+        throw new UnsupportedOperationException("Client ist nicht authentifiziert");
+    }
 }

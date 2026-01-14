@@ -48,6 +48,8 @@ public class NetworkSystem {
         logger.debug("Paket registriert: C2SDeleteSchueler (ID: 16)");
         PacketRegistry.registerPacket(S2CResponseSchuelerOperation.class); //17
         logger.debug("Paket registriert: S2CResponseSchuelerOperation (ID: 17)");
-        logger.info("NetworkSystem erfolgreich initialisiert, {} Pakete registriert", 18);
+        PacketRegistry.registerPacket(C2SSetSchuelerNote.class); //18
+        logger.debug("Paket registriert: C2SSetSchuelerNote (ID: 18)");
+        logger.info("NetworkSystem erfolgreich initialisiert, {} Pakete registriert", 19);
     }
 }

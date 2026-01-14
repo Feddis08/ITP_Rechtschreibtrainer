@@ -81,4 +81,14 @@ public interface ClientState {
      * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
      */
     void deleteSchueler(ServerClient client, String schuelerUsername, long requestId) throws IOException;
+
+    /**
+     * Setzt eine Note für einen Schüler.
+     * Nur für LehrerState verfügbar.
+     * @param client Der ServerClient
+     * @param schuelerUsername Der Benutzername des Schülers
+     * @param note Die Note
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
+     */
+    void setSchuelerNote(ServerClient client, String schuelerUsername, at.tgm.objects.Note note, long requestId) throws IOException;
 }

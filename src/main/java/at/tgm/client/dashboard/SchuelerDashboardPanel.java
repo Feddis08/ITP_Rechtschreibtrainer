@@ -2,8 +2,10 @@ package at.tgm.client.dashboard;
 
 import at.tgm.client.ClientNetworkController;
 import at.tgm.network.packets.C2SDeleteSchueler;
+import at.tgm.network.packets.C2SSetSchuelerNote;
 import at.tgm.network.packets.C2SToggleSchuelerStatus;
 import at.tgm.network.packets.S2CResponseSchuelerOperation;
+import at.tgm.objects.Note;
 import at.tgm.objects.NutzerStatus;
 import at.tgm.objects.Schueler;
 import org.slf4j.Logger;
@@ -28,11 +30,15 @@ public class SchuelerDashboardPanel extends JPanel {
     private final JLabel beschreibungLabel = new JLabel();
     private final JLabel lastLoginLabel = new JLabel();
     private final JLabel createdAtLabel = new JLabel();
+    private final JLabel noteLabel = new JLabel();
     
     private Schueler currentSchueler;
     private final DashboardFrame parent;
     private JButton toggleStatusButton;
     private JButton deleteButton;
+    private JComboBox<Note.Notenwert> noteComboBox;
+    private JTextArea reasonTextArea;
+    private JButton saveNoteButton;
 
     public SchuelerDashboardPanel(DashboardFrame parent) {
         this.parent = parent;
@@ -93,8 +99,58 @@ public class SchuelerDashboardPanel extends JPanel {
         
         gbc.gridx = 0; gbc.gridy = row++;
         center.add(createdAtLabel, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = row++;
+        center.add(noteLabel, gbc);
 
-        add(center, BorderLayout.CENTER);
+        // Haupt-Panel mit Center und Note-Panel
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.add(center, BorderLayout.CENTER);
+        
+        // Note-Eingabe Panel
+        JPanel notePanel = new JPanel();
+        notePanel.setLayout(new BorderLayout());
+        notePanel.setBorder(BorderFactory.createTitledBorder("Note vergeben"));
+        notePanel.setPreferredSize(new Dimension(400, 150));
+        
+        JPanel noteInputPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints noteGbc = new GridBagConstraints();
+        noteGbc.insets = new Insets(5, 5, 5, 5);
+        noteGbc.anchor = GridBagConstraints.WEST;
+        
+        noteGbc.gridx = 0; noteGbc.gridy = 0;
+        noteInputPanel.add(new JLabel("Note:"), noteGbc);
+        
+        noteGbc.gridx = 1; noteGbc.gridy = 0;
+        noteGbc.fill = GridBagConstraints.HORIZONTAL;
+        noteGbc.weightx = 1.0;
+        noteComboBox = new JComboBox<>(Note.Notenwert.values());
+        noteInputPanel.add(noteComboBox, noteGbc);
+        
+        noteGbc.gridx = 0; noteGbc.gridy = 1;
+        noteGbc.gridwidth = 2;
+        noteGbc.fill = GridBagConstraints.HORIZONTAL;
+        noteInputPanel.add(new JLabel("Begründung:"), noteGbc);
+        
+        noteGbc.gridx = 0; noteGbc.gridy = 2;
+        noteGbc.gridwidth = 2;
+        noteGbc.fill = GridBagConstraints.BOTH;
+        noteGbc.weightx = 1.0;
+        noteGbc.weighty = 1.0;
+        reasonTextArea = new JTextArea(3, 30);
+        reasonTextArea.setLineWrap(true);
+        reasonTextArea.setWrapStyleWord(true);
+        JScrollPane scrollPane = new JScrollPane(reasonTextArea);
+        noteInputPanel.add(scrollPane, noteGbc);
+        
+        notePanel.add(noteInputPanel, BorderLayout.CENTER);
+        
+        saveNoteButton = new JButton("Note speichern");
+        saveNoteButton.addActionListener(e -> handleSaveNote());
+        notePanel.add(saveNoteButton, BorderLayout.SOUTH);
+        
+        mainPanel.add(notePanel, BorderLayout.EAST);
+        add(mainPanel, BorderLayout.CENTER);
         
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         JButton quizesButton = new JButton("Quizes anzeigen");
@@ -130,6 +186,13 @@ public class SchuelerDashboardPanel extends JPanel {
             beschreibungLabel.setText("");
             lastLoginLabel.setText("");
             createdAtLabel.setText("");
+            noteLabel.setText("");
+            if (noteComboBox != null) {
+                noteComboBox.setSelectedIndex(0);
+            }
+            if (reasonTextArea != null) {
+                reasonTextArea.setText("");
+            }
             return;
         }
 
@@ -175,6 +238,33 @@ public class SchuelerDashboardPanel extends JPanel {
             lastLoginLabel.setText("Letzter Login: -");
         }
         createdAtLabel.setText("Account erstellt: " + sdf.format(s.getCreatedAt()));
+        
+        // Note anzeigen
+        if (s.getNote() != null) {
+            Note note = s.getNote();
+            String noteText = "Note: " + (note.getNotenwert() != null ? note.getNotenwert().getDisplayName() : "Keine");
+            if (note.getReason() != null && !note.getReason().isEmpty()) {
+                noteText += " - " + note.getReason();
+            }
+            noteLabel.setText(noteText);
+            noteLabel.setFont(new Font("Arial", Font.BOLD, 14));
+            
+            // Note-Eingabefelder mit aktueller Note füllen
+            if (noteComboBox != null && note.getNotenwert() != null) {
+                noteComboBox.setSelectedItem(note.getNotenwert());
+            }
+            if (reasonTextArea != null) {
+                reasonTextArea.setText(note.getReason() != null ? note.getReason() : "");
+            }
+        } else {
+            noteLabel.setText("Note: Keine Note vergeben");
+            if (noteComboBox != null) {
+                noteComboBox.setSelectedIndex(0);
+            }
+            if (reasonTextArea != null) {
+                reasonTextArea.setText("");
+            }
+        }
         
         // Update button text based on deactivated status
         if (toggleStatusButton != null) {
@@ -325,6 +415,96 @@ public class SchuelerDashboardPanel extends JPanel {
                 });
             } catch (Exception e) {
                 logger.error("Fehler beim Löschen", e);
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(this, 
+                        "Fehler: " + e.getMessage(), 
+                        "Fehler", 
+                        JOptionPane.ERROR_MESSAGE);
+                });
+            }
+        }).start();
+    }
+    
+    private void handleSaveNote() {
+        if (currentSchueler == null) {
+            return;
+        }
+        
+        if (noteComboBox == null || reasonTextArea == null) {
+            return;
+        }
+        
+        Note.Notenwert selectedNote = (Note.Notenwert) noteComboBox.getSelectedItem();
+        String reason = reasonTextArea.getText().trim();
+        
+        if (selectedNote == null) {
+            JOptionPane.showMessageDialog(this, 
+                "Bitte wählen Sie eine Note aus.", 
+                "Fehler", 
+                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        if (reason.isEmpty()) {
+            JOptionPane.showMessageDialog(this, 
+                "Bitte geben Sie eine Begründung an.", 
+                "Fehler", 
+                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        String username = currentSchueler.getUsername();
+        Note note = new Note(selectedNote, reason);
+        logger.info("Speichere Note für Schüler: {}", username);
+        
+        // In separatem Thread ausführen, um UI nicht zu blockieren
+        new Thread(() -> {
+            try {
+                C2SSetSchuelerNote request = new C2SSetSchuelerNote(username, note);
+                S2CResponseSchuelerOperation response = ClientNetworkController.socketClient
+                    .getChannel()
+                    .sendAndWait(
+                        request,
+                        S2CResponseSchuelerOperation.class,
+                        5,
+                        TimeUnit.SECONDS
+                    );
+                
+                // UI-Update im EDT (Event Dispatch Thread)
+                SwingUtilities.invokeLater(() -> {
+                    if (response.isSuccess()) {
+                        // Update local student object
+                        currentSchueler.setNote(note);
+                        // Update note label
+                        String noteText = "Note: " + note.getNotenwert().getDisplayName();
+                        if (note.getReason() != null && !note.getReason().isEmpty()) {
+                            noteText += " - " + note.getReason();
+                        }
+                        noteLabel.setText(noteText);
+                        noteLabel.setFont(new Font("Arial", Font.BOLD, 14));
+                        
+                        JOptionPane.showMessageDialog(this, 
+                            response.getMessage(), 
+                            "Erfolg", 
+                            JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(this, 
+                            response.getMessage(), 
+                            "Fehler", 
+                            JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+                
+            } catch (TimeoutException e) {
+                logger.error("Timeout beim Speichern der Note", e);
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(this, 
+                        "Operation konnte nicht abgeschlossen werden (Timeout).", 
+                        "Fehler", 
+                        JOptionPane.ERROR_MESSAGE);
+                });
+            } catch (Exception e) {
+                logger.error("Fehler beim Speichern der Note", e);
                 SwingUtilities.invokeLater(() -> {
                     JOptionPane.showMessageDialog(this, 
                         "Fehler: " + e.getMessage(), 

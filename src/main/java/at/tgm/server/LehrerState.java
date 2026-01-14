@@ -260,4 +260,55 @@ public class LehrerState implements ClientState {
             client.send(response);
         }
     }
+
+    @Override
+    public void setSchuelerNote(ServerClient client, String schuelerUsername, at.tgm.objects.Note note, long requestId) throws IOException {
+        if (client == null) {
+            throw new IllegalArgumentException("Client darf nicht null sein");
+        }
+        if (schuelerUsername == null || schuelerUsername.trim().isEmpty()) {
+            logger.error("Lehrer '{}' versuchte, Note ohne Benutzername zu setzen", 
+                        client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown");
+            at.tgm.network.packets.S2CResponseSchuelerOperation response = 
+                new at.tgm.network.packets.S2CResponseSchuelerOperation(false, "Benutzername ist erforderlich");
+            response.setRequestId(requestId);
+            client.send(response);
+            return;
+        }
+        if (note == null) {
+            logger.error("Lehrer '{}' versuchte, null-Note zu setzen", 
+                        client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown");
+            at.tgm.network.packets.S2CResponseSchuelerOperation response = 
+                new at.tgm.network.packets.S2CResponseSchuelerOperation(false, "Note ist erforderlich");
+            response.setRequestId(requestId);
+            client.send(response);
+            return;
+        }
+
+        // Finde den Schüler
+        at.tgm.objects.Nutzer nutzer = Server.findNutzerByUsername(schuelerUsername);
+        if (nutzer == null || !(nutzer instanceof Schueler)) {
+            logger.warn("Lehrer '{}' versuchte, Note für nicht existierenden Schüler '{}' zu setzen", 
+                       client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", schuelerUsername);
+            at.tgm.network.packets.S2CResponseSchuelerOperation response = 
+                new at.tgm.network.packets.S2CResponseSchuelerOperation(false, "Schüler nicht gefunden");
+            response.setRequestId(requestId);
+            client.send(response);
+            return;
+        }
+
+        Schueler schueler = (Schueler) nutzer;
+        schueler.setNote(note);
+        
+        logger.info("Lehrer '{}' hat Note '{}' für Schüler '{}' gesetzt (Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", 
+                   note.getNotenwert() != null ? note.getNotenwert().getDisplayName() : "null",
+                   schuelerUsername, requestId);
+        
+        at.tgm.network.packets.S2CResponseSchuelerOperation response = 
+            new at.tgm.network.packets.S2CResponseSchuelerOperation(true, 
+                "Note erfolgreich gesetzt");
+        response.setRequestId(requestId);
+        client.send(response);
+    }
 }

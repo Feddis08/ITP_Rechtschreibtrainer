@@ -79,4 +79,9 @@ public class ServerClient extends SocketClient {
         logger.debug("deleteSchueler() aufgerufen für Schüler '{}' mit Request-ID: {}", schuelerUsername, requestId);
         state.deleteSchueler(this, schuelerUsername, requestId);
     }
+
+    public void setSchuelerNote(String schuelerUsername, at.tgm.objects.Note note, long requestId) throws IOException {
+        logger.debug("setSchuelerNote() aufgerufen für Schüler '{}' mit Request-ID: {}", schuelerUsername, requestId);
+        state.setSchuelerNote(this, schuelerUsername, note, requestId);
+    }
 }

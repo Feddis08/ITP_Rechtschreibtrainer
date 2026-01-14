@@ -221,6 +221,13 @@ public class SchuelerState implements ClientState {
         throw new UnsupportedOperationException("Schüler können keine Schueler löschen");
     }
 
+    @Override
+    public void setSchuelerNote(ServerClient client, String schuelerUsername, at.tgm.objects.Note note, long requestId) throws IOException {
+        logger.warn("Schüler '{}' versuchte, Note zu setzen (nicht erlaubt, Request-ID: {})", 
+                   client.getNutzer() != null ? client.getNutzer().getUsername() : "unknown", requestId);
+        throw new UnsupportedOperationException("Schüler können keine Noten setzen");
+    }
+
     private String safe(String s) {
         return s == null ? "" : s.trim();
     }

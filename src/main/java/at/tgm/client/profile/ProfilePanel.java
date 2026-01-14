@@ -1,7 +1,9 @@
 package at.tgm.client.profile;
 
+import at.tgm.objects.Note;
 import at.tgm.objects.Nutzer;
 import at.tgm.objects.NutzerStatus;
+import at.tgm.objects.Schueler;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -87,6 +89,40 @@ public class ProfilePanel extends JPanel {
         JPanel info = new JPanel(new GridLayout(0, 1, 0, 8));
         info.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
 
+        // Note anzeigen, wenn der Nutzer ein Schüler ist
+        if (nutzer instanceof Schueler) {
+            Schueler schueler = (Schueler) nutzer;
+            if (schueler.getNote() != null) {
+                Note note = schueler.getNote();
+                String noteText = note.getNotenwert() != null ? note.getNotenwert().getDisplayName() : "Keine Note";
+                JPanel noteRow = new JPanel(new BorderLayout());
+                JLabel noteLabel = new JLabel("Note:");
+                noteLabel.setFont(new Font("Arial", Font.BOLD, 14));
+                JLabel noteValueLabel = new JLabel(noteText);
+                noteValueLabel.setFont(new Font("Arial", Font.BOLD, 16));
+                noteValueLabel.setForeground(new Color(0, 100, 200));
+                noteRow.add(noteLabel, BorderLayout.WEST);
+                noteRow.add(noteValueLabel, BorderLayout.CENTER);
+                info.add(noteRow);
+                
+                // Begründung anzeigen, falls vorhanden
+                if (note.getReason() != null && !note.getReason().isEmpty()) {
+                    JPanel reasonRow = new JPanel(new BorderLayout());
+                    JLabel reasonLabel = new JLabel("Begründung:");
+                    reasonLabel.setFont(new Font("Arial", Font.BOLD, 14));
+                    JLabel reasonValueLabel = new JLabel("<html><div style='width: 400px;'>" + 
+                                                         note.getReason().replace("\n", "<br>") + "</div></html>");
+                    reasonValueLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+                    reasonRow.add(reasonLabel, BorderLayout.WEST);
+                    reasonRow.add(reasonValueLabel, BorderLayout.CENTER);
+                    info.add(reasonRow);
+                }
+            } else {
+                info.add(infoRow("Note:", "Keine Note vergeben"));
+            }
+            info.add(createSeparator());
+        }
+
         info.add(infoRow("Vorname:", nutzer.getFirstName()));
         info.add(infoRow("Nachname:", nutzer.getLastName()));
         info.add(infoRow("E-Mail:", nutzer.getEmail()));
@@ -97,6 +133,13 @@ public class ProfilePanel extends JPanel {
         info.add(infoRow("Beschreibung:", nutzer.getBeschreibung()));
 
         return info;
+    }
+    
+    private JPanel createSeparator() {
+        JPanel separator = new JPanel();
+        separator.setPreferredSize(new Dimension(0, 10));
+        separator.setOpaque(false);
+        return separator;
     }
 
     private JPanel infoRow(String label, String value) {
