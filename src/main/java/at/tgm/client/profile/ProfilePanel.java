@@ -11,177 +11,442 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.net.URL;
 import java.net.URLConnection;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
+/**
+ * Modernes Profil-Panel für die Anzeige von Nutzerinformationen.
+ * Zeigt Avatar, Status, persönliche Daten und ggf. Noten (für Schüler) an.
+ */
 public class ProfilePanel extends JPanel {
+
+    private static final int AVATAR_SIZE = 120;
+    private static final Color BACKGROUND_COLOR = Color.WHITE;
+    private static final Color HEADER_BACKGROUND = new Color(248, 248, 248);
+    private static final Color TEXT_COLOR = new Color(50, 50, 50);
+    private static final Color LABEL_COLOR = new Color(100, 100, 100);
+    private static final Font NAME_FONT = new Font("Arial", Font.BOLD, 24);
+    private static final Font LABEL_FONT = new Font("Arial", Font.BOLD, 13);
+    private static final Font VALUE_FONT = new Font("Arial", Font.PLAIN, 13);
+    private static final Font STATUS_FONT = new Font("Arial", Font.PLAIN, 12);
+    private static final Font FOOTER_FONT = new Font("Arial", Font.ITALIC, 11);
 
     private final Nutzer nutzer;
 
-    public ProfilePanel(Nutzer n) {
-        this.nutzer = n;
-
-        setLayout(new BorderLayout());
-
-        add(buildHeaderPanel(), BorderLayout.NORTH);
-        add(buildInfoPanel(), BorderLayout.CENTER);
-        add(buildFooterPanel(), BorderLayout.SOUTH);
+    public ProfilePanel(Nutzer nutzer) {
+        this.nutzer = nutzer;
+        initializePanel();
     }
 
-    private JPanel buildHeaderPanel() {
+    private void initializePanel() {
+        setLayout(new BorderLayout());
+        setBackground(BACKGROUND_COLOR);
+        setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+
+        // Header mit Avatar, Name und Status
+        add(buildHeaderSection(), BorderLayout.NORTH);
+        
+        // Hauptinhalt mit Nutzerinformationen (in ScrollPane)
+        JPanel contentPanel = buildContentSection();
+        JScrollPane scrollPane = new JScrollPane(contentPanel);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16); // Sanfteres Scrollen
+        scrollPane.setBackground(BACKGROUND_COLOR);
+        scrollPane.getViewport().setBackground(BACKGROUND_COLOR);
+        add(scrollPane, BorderLayout.CENTER);
+        
+        // Footer
+        add(buildFooterSection(), BorderLayout.SOUTH);
+    }
+
+    /**
+     * Erstellt den Header-Bereich mit Avatar, Name und Status.
+     */
+    private JPanel buildHeaderSection() {
         JPanel header = new JPanel(new BorderLayout());
-        header.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-        header.setBackground(new Color(240, 240, 240));
+        header.setBackground(HEADER_BACKGROUND);
+        header.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
 
-        JLabel avatar = new JLabel();
-        avatar.setHorizontalAlignment(SwingConstants.CENTER);
+        // Zentrierter Container für Avatar, Name und Status
+        JPanel centerContainer = new JPanel();
+        centerContainer.setLayout(new BoxLayout(centerContainer, BoxLayout.Y_AXIS));
+        centerContainer.setOpaque(false);
+        centerContainer.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        ImageIcon img = null;
-        if (nutzer.getProfilePictureUrl() != null && !nutzer.getProfilePictureUrl().isEmpty()) {
-            img = loadImageFromURL(nutzer.getProfilePictureUrl());
-        }
-        if (img == null) {
-            img = (ImageIcon) defaultAvatar();
-        }
-        avatar.setIcon(img);
+        // Avatar
+        JLabel avatarLabel = createAvatarLabel(AVATAR_SIZE);
+        avatarLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        centerContainer.add(avatarLabel);
+        centerContainer.add(Box.createRigidArea(new Dimension(0, 16)));
 
-        JLabel name = new JLabel(
-                nutzer.getDisplayName() != null ? nutzer.getDisplayName() : nutzer.getUsername()
-        );
-        name.setFont(new Font("Arial", Font.BOLD, 22));
-        name.setHorizontalAlignment(SwingConstants.CENTER);
+        // Name
+        String displayName = getDisplayName();
+        JLabel nameLabel = new JLabel(displayName);
+        nameLabel.setFont(NAME_FONT);
+        nameLabel.setForeground(TEXT_COLOR);
+        nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        centerContainer.add(nameLabel);
+        centerContainer.add(Box.createRigidArea(new Dimension(0, 8)));
 
-        JLabel statusDot = new JLabel("●");
-        statusDot.setFont(new Font("Arial", Font.BOLD, 22));
-        statusDot.setForeground(colorForStatus(nutzer.getStatus()));
-        statusDot.setHorizontalAlignment(SwingConstants.CENTER);
+        // Status
+        JLabel statusLabel = createStatusLabel();
+        statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        centerContainer.add(statusLabel);
 
-        JPanel top = new JPanel(new GridLayout(3, 1));
-        top.setOpaque(false);
-        top.add(avatar);
-        top.add(name);
-        top.add(statusDot);
-
-        header.add(top, BorderLayout.CENTER);
+        header.add(centerContainer, BorderLayout.CENTER);
         return header;
     }
 
-    private Icon defaultAvatar() {
-        int size = 100;
-        Image img = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = (Graphics2D) img.getGraphics();
-        g.setColor(Color.LIGHT_GRAY);
-        g.fillOval(0, 0, size, size);
-        g.dispose();
-        return new ImageIcon(img);
-    }
+    /**
+     * Erstellt das Avatar-Label mit Bild oder Standard-Avatar.
+     */
+    private JLabel createAvatarLabel(int size) {
+        JLabel avatarLabel = new JLabel();
+        avatarLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        avatarLabel.setVerticalAlignment(SwingConstants.CENTER);
 
-    private Color colorForStatus(NutzerStatus s) {
-        if (s == null) return Color.GRAY;
-        switch (s) {
-            case ONLINE: return new Color(0, 180, 0);
-            case AWAY: return new Color(255, 170, 0);
-            case BUSY: return new Color(200, 0, 0);
-            case BANNED: return Color.BLACK;
-            default: return Color.GRAY;
+        ImageIcon avatarIcon = loadAvatarIcon(nutzer.getProfilePictureUrl(), size);
+        if (avatarIcon == null) {
+            avatarIcon = createDefaultAvatar(size);
         }
+        avatarLabel.setIcon(avatarIcon);
+
+        return avatarLabel;
     }
 
-    private JPanel buildInfoPanel() {
-        JPanel info = new JPanel(new GridLayout(0, 1, 0, 8));
-        info.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
+    /**
+     * Erstellt das Status-Label mit farbigem Punkt und Text.
+     */
+    private JLabel createStatusLabel() {
+        NutzerStatus status = nutzer.getStatus();
+        String statusText = getStatusText(status);
+        Color statusColor = getStatusColor(status);
 
-        // Note anzeigen, wenn der Nutzer ein Schüler ist
+        JLabel statusLabel = new JLabel("● " + statusText);
+        statusLabel.setFont(STATUS_FONT);
+        statusLabel.setForeground(statusColor);
+        statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        return statusLabel;
+    }
+
+    /**
+     * Erstellt den Hauptinhalt mit allen Nutzerinformationen.
+     */
+    private JPanel buildContentSection() {
+        JPanel content = new JPanel();
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setBackground(BACKGROUND_COLOR);
+        content.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
+
+        // Note-Sektion (nur für Schüler)
         if (nutzer instanceof Schueler) {
-            Schueler schueler = (Schueler) nutzer;
-            if (schueler.getNote() != null) {
-                Note note = schueler.getNote();
-                String noteText = note.getNotenwert() != null ? note.getNotenwert().getDisplayName() : "Keine Note";
-                JPanel noteRow = new JPanel(new BorderLayout());
-                JLabel noteLabel = new JLabel("Note:");
-                noteLabel.setFont(new Font("Arial", Font.BOLD, 14));
-                JLabel noteValueLabel = new JLabel(noteText);
-                noteValueLabel.setFont(new Font("Arial", Font.BOLD, 16));
-                noteValueLabel.setForeground(new Color(0, 100, 200));
-                noteRow.add(noteLabel, BorderLayout.WEST);
-                noteRow.add(noteValueLabel, BorderLayout.CENTER);
-                info.add(noteRow);
-                
-                // Begründung anzeigen, falls vorhanden
-                if (note.getReason() != null && !note.getReason().isEmpty()) {
-                    JPanel reasonRow = new JPanel(new BorderLayout());
-                    JLabel reasonLabel = new JLabel("Begründung:");
-                    reasonLabel.setFont(new Font("Arial", Font.BOLD, 14));
-                    JLabel reasonValueLabel = new JLabel("<html><div style='width: 400px;'>" + 
-                                                         note.getReason().replace("\n", "<br>") + "</div></html>");
-                    reasonValueLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-                    reasonRow.add(reasonLabel, BorderLayout.WEST);
-                    reasonRow.add(reasonValueLabel, BorderLayout.CENTER);
-                    info.add(reasonRow);
-                }
-            } else {
-                info.add(infoRow("Note:", "Keine Note vergeben"));
-            }
-            info.add(createSeparator());
+            addNoteSection(content);
+            content.add(Box.createRigidArea(new Dimension(0, 20)));
         }
 
-        info.add(infoRow("Vorname:", nutzer.getFirstName()));
-        info.add(infoRow("Nachname:", nutzer.getLastName()));
-        info.add(infoRow("E-Mail:", nutzer.getEmail()));
-        info.add(infoRow("Telefon:", nutzer.getPhoneNumber()));
-        info.add(infoRow("UUID:", nutzer.getUuid()));
-        info.add(infoRow("Account erstellt:", String.valueOf(nutzer.getCreatedAt())));
-        info.add(infoRow("Letzter Login:", String.valueOf(nutzer.getLastLoginTimestamp())));
-        info.add(infoRow("Beschreibung:", nutzer.getBeschreibung()));
+        // Persönliche Informationen
+        addInfoRow(content, "Vorname:", nutzer.getFirstName());
+        addInfoRow(content, "Nachname:", nutzer.getLastName());
+        addInfoRow(content, "E-Mail:", nutzer.getEmail());
+        addInfoRow(content, "Telefon:", nutzer.getPhoneNumber());
+        addInfoRow(content, "UUID:", nutzer.getUuid());
+        addInfoRow(content, "Account erstellt:", formatTimestamp(nutzer.getCreatedAt()));
+        addInfoRow(content, "Letzter Login:", formatTimestamp(nutzer.getLastLoginTimestamp()));
+        
+        // Beschreibung (kann mehrzeilig sein)
+        String beschreibung = nutzer.getBeschreibung();
+        if (beschreibung != null && !beschreibung.trim().isEmpty()) {
+            content.add(Box.createRigidArea(new Dimension(0, 12)));
+            addMultilineInfoRow(content, "Beschreibung:", beschreibung);
+        }
 
-        return info;
+        // Füllt verbleibenden Platz
+        content.add(Box.createVerticalGlue());
+
+        return content;
     }
-    
-    private JPanel createSeparator() {
-        JPanel separator = new JPanel();
-        separator.setPreferredSize(new Dimension(0, 10));
-        separator.setOpaque(false);
-        return separator;
+
+    /**
+     * Fügt die Note-Sektion für Schüler hinzu.
+     */
+    private void addNoteSection(JPanel parent) {
+            Schueler schueler = (Schueler) nutzer;
+                Note note = schueler.getNote();
+
+        if (note != null && note.getNotenwert() != null) {
+            String noteText = note.getNotenwert().getDisplayName();
+            String reason = note.getReason();
+
+            // Note mit hervorgehobener Darstellung
+            JPanel notePanel = createHighlightedInfoRow("Note:", noteText);
+            parent.add(notePanel);
+            parent.add(Box.createRigidArea(new Dimension(0, 8)));
+
+            // Begründung, falls vorhanden
+            if (reason != null && !reason.trim().isEmpty()) {
+                addInfoRow(parent, "Begründung:", reason);
+            }
+        } else {
+            addInfoRow(parent, "Note:", "Keine Note vergeben");
+        }
     }
 
-    private JPanel infoRow(String label, String value) {
-        JPanel row = new JPanel(new BorderLayout());
-        JLabel lbl = new JLabel(label);
-        lbl.setFont(new Font("Arial", Font.BOLD, 14));
+    /**
+     * Fügt eine einfache Info-Zeile hinzu.
+     */
+    private void addInfoRow(JPanel parent, String label, String value) {
+        JPanel row = createInfoRow(label, value, false);
+        parent.add(row);
+        parent.add(Box.createRigidArea(new Dimension(0, 10)));
+    }
 
-        JLabel val = new JLabel(value != null ? value : "—");
-        val.setFont(new Font("Arial", Font.PLAIN, 14));
+    /**
+     * Fügt eine mehrzeilige Info-Zeile hinzu (z.B. für Beschreibung).
+     */
+    private void addMultilineInfoRow(JPanel parent, String label, String value) {
+        JPanel row = new JPanel(new BorderLayout(20, 0));
+        row.setOpaque(false);
+        row.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        row.add(lbl, BorderLayout.WEST);
-        row.add(val, BorderLayout.CENTER);
+        // Label
+        JLabel labelComponent = new JLabel(label);
+        labelComponent.setFont(LABEL_FONT);
+        labelComponent.setForeground(LABEL_COLOR);
+        labelComponent.setVerticalAlignment(SwingConstants.TOP);
+        labelComponent.setPreferredSize(new Dimension(160, 20));
+        row.add(labelComponent, BorderLayout.WEST);
+
+        // Wert (mehrzeilig)
+        JTextArea valueComponent = new JTextArea(value);
+        valueComponent.setFont(VALUE_FONT);
+        valueComponent.setForeground(TEXT_COLOR);
+        valueComponent.setEditable(false);
+        valueComponent.setOpaque(false);
+        valueComponent.setLineWrap(true);
+        valueComponent.setWrapStyleWord(true);
+        valueComponent.setFocusable(false);
+        valueComponent.setBackground(null);
+        valueComponent.setBorder(null);
+        
+        // Berechne optimale Höhe
+        valueComponent.setSize(new Dimension(400, Short.MAX_VALUE));
+        valueComponent.setSize(valueComponent.getPreferredSize());
+
+        row.add(valueComponent, BorderLayout.CENTER);
+        parent.add(row);
+        parent.add(Box.createRigidArea(new Dimension(0, 10)));
+    }
+
+    /**
+     * Erstellt eine normale Info-Zeile.
+     */
+    private JPanel createInfoRow(String label, String value, boolean highlight) {
+        JPanel row = new JPanel(new BorderLayout(20, 0));
+        row.setOpaque(false);
+        row.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Label
+        JLabel labelComponent = new JLabel(label);
+        labelComponent.setFont(LABEL_FONT);
+        labelComponent.setForeground(LABEL_COLOR);
+        labelComponent.setPreferredSize(new Dimension(160, 20));
+        row.add(labelComponent, BorderLayout.WEST);
+
+        // Wert
+        String displayValue = (value != null && !value.isEmpty()) ? value : "—";
+        JLabel valueComponent = new JLabel(displayValue);
+        valueComponent.setFont(highlight ? LABEL_FONT : VALUE_FONT);
+        valueComponent.setForeground(highlight ? new Color(0, 100, 200) : TEXT_COLOR);
+        row.add(valueComponent, BorderLayout.CENTER);
+
         return row;
     }
 
-    private JPanel buildFooterPanel() {
+    /**
+     * Erstellt eine hervorgehobene Info-Zeile (z.B. für Note).
+     */
+    private JPanel createHighlightedInfoRow(String label, String value) {
+        return createInfoRow(label, value, true);
+    }
+
+    /**
+     * Erstellt den Footer-Bereich.
+     */
+    private JPanel buildFooterSection() {
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        footer.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+        footer.setBackground(BACKGROUND_COLOR);
+        footer.setBorder(BorderFactory.createEmptyBorder(12, 20, 12, 20));
 
-        JLabel hint = new JLabel("Profil wird im Dashboard angezeigt.");
-        hint.setFont(new Font("Arial", Font.ITALIC, 12));
+        JLabel footerLabel = new JLabel("Profil wird im Dashboard angezeigt.");
+        footerLabel.setFont(FOOTER_FONT);
+        footerLabel.setForeground(new Color(150, 150, 150));
+        footer.add(footerLabel);
 
-        footer.add(hint);
         return footer;
     }
 
-    private ImageIcon loadImageFromURL(String url) {
-        try {
-            URL u = new URL(url);
-            URLConnection conn = u.openConnection();
-            conn.setRequestProperty("User-Agent", "Mozilla/5.0");
-            conn.connect();
-
-            Image img = ImageIO.read(conn.getInputStream());
-            if (img == null) return null;
-
-            Image scaled = img.getScaledInstance(100, 100, Image.SCALE_SMOOTH);
-            return new ImageIcon(scaled);
-
-        } catch (Exception e) {
-            e.printStackTrace();
+    /**
+     * Lädt ein Avatar-Bild von einer URL.
+     */
+    private ImageIcon loadAvatarIcon(String url, int size) {
+        if (url == null || url.trim().isEmpty()) {
             return null;
+        }
+
+        try {
+            URL imageUrl = new URL(url);
+            URLConnection connection = imageUrl.openConnection();
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0");
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
+            connection.connect();
+
+            BufferedImage image = ImageIO.read(connection.getInputStream());
+            if (image == null) {
+                return null;
+            }
+
+            // Skaliere das Bild auf die gewünschte Größe
+            Image scaledImage = image.getScaledInstance(
+                size, 
+                size, 
+                Image.SCALE_SMOOTH
+            );
+
+            return new ImageIcon(scaledImage);
+        } catch (Exception e) {
+            // Fehler beim Laden - verwende Standard-Avatar
+            return null;
+        }
+    }
+
+    /**
+     * Erstellt einen Standard-Avatar (grauer Kreis).
+     */
+    private ImageIcon createDefaultAvatar(int size) {
+        BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = image.createGraphics();
+        
+        // Antialiasing für bessere Qualität
+        g.setRenderingHint(
+            RenderingHints.KEY_ANTIALIASING, 
+            RenderingHints.VALUE_ANTIALIAS_ON
+        );
+        
+        // Zeichne grauen Kreis
+        g.setColor(new Color(220, 220, 220));
+        g.fillOval(0, 0, size, size);
+        
+        // Optional: Zeichne Initialen
+        String initials = getInitials();
+        if (initials != null && !initials.isEmpty()) {
+            g.setColor(new Color(150, 150, 150));
+            g.setFont(new Font("Arial", Font.BOLD, size / 3));
+            FontMetrics fm = g.getFontMetrics();
+            int x = (size - fm.stringWidth(initials)) / 2;
+            int y = (size + fm.getAscent() - fm.getDescent()) / 2;
+            g.drawString(initials, x, y);
+        }
+        
+        g.dispose();
+        return new ImageIcon(image);
+    }
+
+    /**
+     * Gibt die Initialen des Nutzers zurück (z.B. "FR" für "Felix Riemer").
+     */
+    private String getInitials() {
+        String firstName = nutzer.getFirstName();
+        String lastName = nutzer.getLastName();
+        
+        StringBuilder initials = new StringBuilder();
+        if (firstName != null && !firstName.isEmpty()) {
+            initials.append(firstName.charAt(0));
+        }
+        if (lastName != null && !lastName.isEmpty()) {
+            initials.append(lastName.charAt(0));
+        }
+        
+        return initials.length() > 0 ? initials.toString().toUpperCase() : null;
+    }
+
+    /**
+     * Gibt den Anzeigenamen zurück (DisplayName oder Username).
+     */
+    private String getDisplayName() {
+        String displayName = nutzer.getDisplayName();
+        if (displayName != null && !displayName.trim().isEmpty()) {
+            return displayName;
+        }
+        return nutzer.getUsername();
+    }
+
+    /**
+     * Gibt den Status-Text zurück.
+     */
+    private String getStatusText(NutzerStatus status) {
+        if (status == null) {
+            return "OFFLINE";
+        }
+        
+        switch (status) {
+            case ONLINE:
+                return "ONLINE";
+            case AWAY:
+                return "ABWESEND";
+            case BUSY:
+                return "BESCHÄFTIGT";
+            case BANNED:
+                return "GESPERRT";
+            case OFFLINE:
+            default:
+                return "OFFLINE";
+        }
+    }
+
+    /**
+     * Gibt die Farbe für einen Status zurück.
+     */
+    private Color getStatusColor(NutzerStatus status) {
+        if (status == null) {
+            return Color.GRAY;
+        }
+        
+        switch (status) {
+            case ONLINE:
+                return new Color(0, 180, 0);
+            case AWAY:
+                return new Color(255, 170, 0);
+            case BUSY:
+                return new Color(200, 0, 0);
+            case BANNED:
+                return Color.BLACK;
+            case OFFLINE:
+            default:
+                return Color.GRAY;
+        }
+    }
+
+    /**
+     * Formatiert einen Timestamp als lesbares Datum.
+     */
+    private String formatTimestamp(long timestamp) {
+        if (timestamp == 0 || timestamp < 0) {
+            return "Nie";
+        }
+        
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat(
+                "dd.MM.yyyy HH:mm:ss", 
+                Locale.GERMAN
+            );
+            return dateFormat.format(new Date(timestamp));
+        } catch (Exception e) {
+            return "Ungültiges Datum";
         }
     }
 }
