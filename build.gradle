@@ -15,10 +15,21 @@ version '1.0-SNAPSHOT'
 repositories {
     mavenCentral()
 }
+
+// Konfiguriere das normale JAR mit Main-Class
+jar {
+    manifest {
+        attributes 'Main-Class': 'at.tgm.Main'
+    }
+}
+
 shadowJar {
     archiveBaseName.set("itp-app")
     archiveVersion.set("1.0")
     archiveClassifier.set("")
+    manifest {
+        attributes 'Main-Class': 'at.tgm.Main'
+    }
 }
 dependencies {
     implementation 'com.esotericsoftware:kryo:5.5.0'

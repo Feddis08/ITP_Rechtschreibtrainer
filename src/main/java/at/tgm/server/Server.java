@@ -16,6 +16,18 @@ public class Server {
         logger.info("Server wird gestartet...");
 
         int port = 5123;
+        if (args.length > 0) {
+            try {
+                port = Integer.parseInt(args[0]);
+                if (port < 1 || port > 65535) {
+                    logger.error("Ungültiger Port: {}. Port muss zwischen 1 und 65535 liegen", port);
+                    System.exit(1);
+                }
+            } catch (NumberFormatException e) {
+                logger.error("Ungültiger Port: '{}'. Port muss eine Zahl sein", args[0]);
+                System.exit(1);
+            }
+        }
 
         nutzers =  new Nutzer[1];
         logger.debug("Nutzer-Array initialisiert");

@@ -14,11 +14,22 @@ public class ClientNetworkController {
     private static final Logger logger = LoggerFactory.getLogger(ClientNetworkController.class);
 
     public static SocketClient socketClient;
+    
+    /**
+     * Verbindet zum Server mit Standardwerten (localhost:5123).
+     */
     public static void connect() {
+        connect("localhost", 5123);
+    }
+    
+    /**
+     * Verbindet zum Server mit der angegebenen Adresse und Port.
+     * @param host Die Server-Adresse
+     * @param port Der Server-Port
+     */
+    public static void connect(String host, int port) {
         logger.info("Initialisiere Netzwerk-System");
         NetworkSystem.init();
-        String host = "localhost";
-        int port = 5123;
 
         logger.info("Verbinde mit Server {}:{}", host, port);
         try {
