@@ -91,4 +91,12 @@ public interface ClientState {
      * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
      */
     void setSchuelerNote(ServerClient client, String schuelerUsername, at.tgm.objects.Note note, long requestId) throws IOException;
+
+    /**
+     * Sendet die eigenen Account-Daten an den Client.
+     * Verfügbar für alle authentifizierten States.
+     * @param client Der ServerClient
+     * @param requestId Die Request-ID aus dem Request-Paket (für Response-Paket)
+     */
+    void getOwnAccount(ServerClient client, long requestId) throws IOException;
 }

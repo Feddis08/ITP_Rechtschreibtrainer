@@ -84,4 +84,9 @@ public class ServerClient extends SocketClient {
         logger.debug("setSchuelerNote() aufgerufen für Schüler '{}' mit Request-ID: {}", schuelerUsername, requestId);
         state.setSchuelerNote(this, schuelerUsername, note, requestId);
     }
+
+    public void getOwnAccount(long requestId) throws IOException {
+        logger.debug("getOwnAccount() aufgerufen mit Request-ID: {}", requestId);
+        state.getOwnAccount(this, requestId);
+    }
 }

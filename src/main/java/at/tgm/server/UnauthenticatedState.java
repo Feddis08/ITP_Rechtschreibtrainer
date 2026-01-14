@@ -85,4 +85,11 @@ public class UnauthenticatedState implements ClientState {
                    requestId, client.getSocket().getRemoteSocketAddress());
         throw new UnsupportedOperationException("Client ist nicht authentifiziert");
     }
+
+    @Override
+    public void getOwnAccount(ServerClient client, long requestId) throws IOException {
+        logger.warn("Nicht authentifizierter Client versuchte, Account-Daten abzurufen (Request-ID: {}): {}", 
+                   requestId, client.getSocket().getRemoteSocketAddress());
+        throw new UnsupportedOperationException("Client ist nicht authentifiziert");
+    }
 }

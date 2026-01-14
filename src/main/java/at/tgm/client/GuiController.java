@@ -4,9 +4,11 @@ import at.tgm.client.ClientNetworkController;
 import at.tgm.client.anmeldung.AnmeldeController;
 import at.tgm.client.dashboard.DashboardFrame;
 import at.tgm.network.packets.C2SGETAllSchueler;
+import at.tgm.network.packets.C2SGETOwnAccount;
 import at.tgm.network.packets.C2SGETSchuelerStats;
 import at.tgm.network.packets.C2SINITQuiz;
 import at.tgm.network.packets.S2CPOSTAllSchueler;
+import at.tgm.network.packets.S2CPOSTOwnAccount;
 import at.tgm.network.packets.S2CPOSTStats;
 import at.tgm.objects.FachbegriffItem;
 import at.tgm.objects.Nutzer;
@@ -155,9 +157,62 @@ public class GuiController {
     }
 
     public void showProfile() {
-        logger.debug("Zeige Profil");
+        logger.debug("Zeige Profil - lade Account-Daten vom Server");
+        // Lade Account-Daten vom Server
+        new Thread(() -> {
+            try {
+                C2SGETOwnAccount request = new C2SGETOwnAccount();
+                S2CPOSTOwnAccount response = ClientNetworkController.socketClient
+                    .getChannel()
+                    .sendAndWait(
+                        request,
+                        S2CPOSTOwnAccount.class,
+                        5,
+                        TimeUnit.SECONDS
+                    );
+                
+                // UI-Update im EDT (Event Dispatch Thread)
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    Nutzer updatedNutzer = response.getNutzer();
+                    if (updatedNutzer != null) {
+                        this.currentNutzer = updatedNutzer;
+                        if (dashboardFrame != null) {
+                            dashboardFrame.setNutzer(updatedNutzer);
+                            dashboardFrame.showProfile();
+                        }
+                    }
+                });
+                
+            } catch (TimeoutException e) {
+                logger.error("Timeout beim Laden der Account-Daten", e);
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    if (dashboardFrame != null) {
+                        dashboardFrame.showProfile(); // Zeige Profil trotzdem mit alten Daten
+                    }
+                });
+            } catch (IOException e) {
+                logger.error("Fehler beim Laden der Account-Daten", e);
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    if (dashboardFrame != null) {
+                        dashboardFrame.showProfile(); // Zeige Profil trotzdem mit alten Daten
+                    }
+                });
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.error("Unterbrochen beim Laden der Account-Daten", e);
+            }
+        }).start();
+    }
+
+    public void updateOwnAccount(Nutzer nutzer) {
+        logger.info("Account-Daten aktualisiert für: {}", nutzer != null ? nutzer.getUsername() : "null");
+        this.currentNutzer = nutzer;
         if (dashboardFrame != null) {
-            dashboardFrame.showProfile();
+            dashboardFrame.setNutzer(nutzer);
+            // Aktualisiere Profil-Panel, falls es bereits angezeigt wird
+            if (dashboardFrame.isProfileVisible()) {
+                dashboardFrame.refreshProfile();
+            }
         }
     }
 

@@ -439,13 +439,41 @@ public class DashboardFrame extends JFrame {
 
     // Vom GuiController aufgerufen
     public void showProfile() {
-        if (profilePanel == null) {
-            profilePanel = new ProfilePanel(nutzer);
-            contentPanel.add(profilePanel, "PROFILE");
+        // Entferne altes Panel, damit es mit neuen Daten neu erstellt wird
+        if (profilePanel != null) {
+            contentPanel.remove(profilePanel);
+            profilePanel = null;
         }
+        
+        profilePanel = new ProfilePanel(nutzer);
+        contentPanel.add(profilePanel, "PROFILE");
+        
         showCard("PROFILE");
         contentPanel.revalidate();
         contentPanel.repaint();
+    }
+
+    public void refreshProfile() {
+        if (profilePanel != null) {
+            // Entferne altes Panel
+            contentPanel.remove(profilePanel);
+            profilePanel = null;
+            // Erstelle neues Panel mit aktualisierten Daten
+            showProfile();
+        }
+    }
+
+    public boolean isProfileVisible() {
+        // Prüfe ob profilePanel existiert und im contentPanel ist
+        if (profilePanel == null) {
+            return false;
+        }
+        for (java.awt.Component comp : contentPanel.getComponents()) {
+            if (comp == profilePanel) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void exitApp() {

@@ -50,6 +50,10 @@ public class NetworkSystem {
         logger.debug("Paket registriert: S2CResponseSchuelerOperation (ID: 17)");
         PacketRegistry.registerPacket(C2SSetSchuelerNote.class); //18
         logger.debug("Paket registriert: C2SSetSchuelerNote (ID: 18)");
-        logger.info("NetworkSystem erfolgreich initialisiert, {} Pakete registriert", 19);
+        PacketRegistry.registerPacket(C2SGETOwnAccount.class); //19
+        logger.debug("Paket registriert: C2SGETOwnAccount (ID: 19)");
+        PacketRegistry.registerPacket(S2CPOSTOwnAccount.class); //20
+        logger.debug("Paket registriert: S2CPOSTOwnAccount (ID: 20)");
+        logger.info("NetworkSystem erfolgreich initialisiert, {} Pakete registriert", 21);
     }
 }

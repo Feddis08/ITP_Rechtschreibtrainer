@@ -228,6 +228,33 @@ public class SchuelerState implements ClientState {
         throw new UnsupportedOperationException("Schüler können keine Noten setzen");
     }
 
+    @Override
+    public void getOwnAccount(ServerClient client, long requestId) throws IOException {
+        if (client == null) {
+            throw new IllegalArgumentException("Client darf nicht null sein");
+        }
+        if (client.getNutzer() == null) {
+            logger.warn("getOwnAccount() aufgerufen, aber Client hat keinen Nutzer");
+            return;
+        }
+
+        at.tgm.objects.Nutzer nutzer = client.getNutzer();
+        // Hole die aktuellen Daten vom Server (falls sich etwas geändert hat)
+        at.tgm.objects.Nutzer serverNutzer = Server.findNutzerByUsername(nutzer.getUsername());
+        if (serverNutzer == null) {
+            logger.warn("Nutzer '{}' nicht auf Server gefunden", nutzer.getUsername());
+            serverNutzer = nutzer; // Fallback: verwende lokale Daten
+        }
+
+        logger.info("Sende Account-Daten an Schüler '{}' (Request-ID: {})", 
+                   serverNutzer.getUsername(), requestId);
+        
+        at.tgm.network.packets.S2CPOSTOwnAccount response = new at.tgm.network.packets.S2CPOSTOwnAccount(serverNutzer);
+        response.setRequestId(requestId);
+        client.send(response);
+        logger.debug("Account-Daten erfolgreich gesendet");
+    }
+
     private String safe(String s) {
         return s == null ? "" : s.trim();
     }
