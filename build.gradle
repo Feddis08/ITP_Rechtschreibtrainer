@@ -99,17 +99,67 @@ task runServer(type: JavaExec) {
 // Native Installer Builds (jpackage)
 // ============================================
 
-def appName = 'ITP-Rechtschreibtrainer-Client'
+def appName = 'FachbegriffeTrainer'
 def appVersion = '1.0'
 def vendor = 'TGM'
 def mainClass = 'at.tgm.Main'
+def iconPng = file("${projectDir}/src/main/resources/icon.png")
+def iconIcons = file("${buildDir}/resources/icon.icns")
+def iconIco = file("${buildDir}/resources/icon.ico")
+
+// Task zum Konvertieren des Icons zu .icns für macOS
+task convertIconToIcons {
+    group = 'distribution'
+    description = 'Konvertiert PNG Icon zu .icns für macOS'
+    
+    doFirst {
+        if (!iconPng.exists()) {
+            throw new GradleException("Icon nicht gefunden: ${iconPng}")
+        }
+        
+        // Erstelle .icns aus PNG mit sips (macOS Tool)
+        def iconsetDir = file("${buildDir}/resources/icon.iconset")
+        iconsetDir.mkdirs()
+        
+        // Erstelle verschiedene Größen für .icns
+        def sizes = [16, 32, 64, 128, 256, 512, 1024]
+        sizes.each { size ->
+            def outputFile = file("${iconsetDir}/icon_${size}x${size}.png")
+            project.exec {
+                commandLine 'sips', '-z', size.toString(), size.toString(), iconPng, '--out', outputFile
+                ignoreExitValue = false
+            }
+            
+            // Für Retina-Displays
+            if (size <= 512) {
+                def retinaSize = size * 2
+                def retinaFile = file("${iconsetDir}/icon_${size}x${size}@2x.png")
+                project.exec {
+                    commandLine 'sips', '-z', retinaSize.toString(), retinaSize.toString(), iconPng, '--out', retinaFile
+                    ignoreExitValue = false
+                }
+            }
+        }
+        
+        // Konvertiere iconset zu .icns
+        project.exec {
+            commandLine 'iconutil', '-c', 'icns', iconsetDir, '-o', iconIcons
+            ignoreExitValue = false
+        }
+        
+        // Lösche temporäres iconset-Verzeichnis
+        delete iconsetDir
+    }
+    
+    outputs.file(iconIcons)
+}
 
 // Task zum Erstellen eines .dmg Installers für macOS
 task buildDmg(type: Exec) {
     group = 'distribution'
     description = 'Erstellt einen .dmg Installer für macOS'
     
-    dependsOn shadowJar
+    dependsOn shadowJar, convertIconToIcons
     
     executable = 'jpackage'
     
@@ -125,6 +175,8 @@ task buildDmg(type: Exec) {
         }
         
         def mainJar = shadowJar.archiveFileName.get()
+        def iconArg = iconIcons.exists() ? iconIcons.absolutePath : iconPng.absolutePath
+        
         args = [
             '--input', "${buildDir}/libs",
             '--name', appName,
@@ -134,6 +186,7 @@ task buildDmg(type: Exec) {
             '--vendor', vendor,
             '--dest', "${buildDir}/distributions",
             '--type', 'dmg',
+            '--icon', iconArg,
             '--java-options', '--add-opens=java.base/java.lang=ALL-UNNAMED',
             '--java-options', '--add-opens=java.base/java.util=ALL-UNNAMED',
             '--arguments', 'client'
@@ -145,27 +198,81 @@ task buildDmg(type: Exec) {
     }
 }
 
-// Task zum Erstellen eines .exe Installers für Windows
-task buildExe(type: Exec) {
+// Task zum Konvertieren des Icons zu .ico für Windows
+task convertIconToIco {
     group = 'distribution'
-    description = 'Erstellt einen .exe Installer für Windows'
+    description = 'Konvertiert PNG Icon zu .ico für Windows'
     
-    dependsOn shadowJar
+    doFirst {
+        if (!iconPng.exists()) {
+            throw new GradleException("Icon nicht gefunden: ${iconPng}")
+        }
+        
+        // Auf Windows: Verwende magick (ImageMagick) oder andere Tools
+        // Falls nicht verfügbar, verwende PNG direkt (jpackage kann es manchmal akzeptieren)
+        def os = System.getProperty('os.name').toLowerCase()
+        if (os.contains('windows')) {
+            // Versuche ImageMagick zu verwenden
+            try {
+                project.exec {
+                    commandLine 'magick', iconPng, '-define', 'icon:auto-resize=256,128,64,48,32,16', iconIco
+                    ignoreExitValue = false
+                }
+            } catch (Exception e) {
+                // Falls ImageMagick nicht verfügbar, kopiere PNG als Fallback
+                // jpackage kann PNG manchmal akzeptieren
+                copy {
+                    from iconPng
+                    into iconIco.parentFile
+                    rename { 'icon.ico' }
+                }
+                println "⚠️  ImageMagick nicht gefunden. Verwende PNG als Fallback."
+            }
+        } else {
+            // Auf macOS/Linux: Versuche ImageMagick oder sips zu verwenden
+            try {
+                project.exec {
+                    commandLine 'magick', iconPng, '-define', 'icon:auto-resize=256,128,64,48,32,16', iconIco
+                    ignoreExitValue = false
+                }
+            } catch (Exception e) {
+                // Fallback: Kopiere PNG (für Cross-Compilation)
+                copy {
+                    from iconPng
+                    into iconIco.parentFile
+                    rename { 'icon.ico' }
+                }
+                println "⚠️  ImageMagick nicht gefunden. Verwende PNG als Fallback."
+            }
+        }
+    }
+    
+    outputs.file(iconIco)
+}
+
+// Task zum Erstellen eines portablen App-Images für Windows (kein WiX benötigt)
+task buildExeAppImage(type: Exec) {
+    group = 'distribution'
+    description = 'Erstellt ein portables App-Image für Windows (kein WiX benötigt)'
+    
+    dependsOn shadowJar, convertIconToIco
     
     executable = 'jpackage'
     
     doFirst {
         // Prüfe ob wir auf Windows sind
         if (!System.getProperty('os.name').toLowerCase().contains('windows')) {
-            throw new GradleException('buildExe kann nur auf Windows ausgeführt werden. Für Cross-Compilation siehe buildExeCrossPlatform')
+            throw new GradleException('buildExeAppImage kann nur auf Windows ausgeführt werden.')
         }
         
         // Lösche vorherige Builds
         delete fileTree("${buildDir}/distributions") {
-            include "*.exe"
+            include "${appName}*"
         }
         
         def mainJar = shadowJar.archiveFileName.get()
+        def iconArg = iconIco.exists() ? iconIco.absolutePath : iconPng.absolutePath
+        
         args = [
             '--input', "${buildDir}/libs",
             '--name', appName,
@@ -174,7 +281,88 @@ task buildExe(type: Exec) {
             '--app-version', appVersion,
             '--vendor', vendor,
             '--dest', "${buildDir}/distributions",
-            '--type', 'exe',
+            '--type', 'app-image',
+            '--icon', iconArg,
+            '--java-options', '--add-opens=java.base/java.lang=ALL-UNNAMED',
+            '--java-options', '--add-opens=java.base/java.util=ALL-UNNAMED',
+            '--arguments', 'client'
+        ]
+    }
+    
+    doLast {
+        println "✅ App-Image erstellt in: ${buildDir}/distributions/${appName}/"
+    }
+}
+
+// Task zum Erstellen eines ZIP-Archivs für Windows (kein WiX benötigt)
+task buildExe(type: Zip) {
+    group = 'distribution'
+    description = 'Erstellt ein ZIP-Archiv für Windows (kein WiX benötigt)'
+    
+    dependsOn buildExeAppImage
+    
+    archiveBaseName = appName
+    archiveVersion = appVersion
+    destinationDirectory = file("${buildDir}/distributions")
+    
+    from("${buildDir}/distributions/${appName}") {
+        into appName
+    }
+    
+    doLast {
+        println "✅ ZIP-Archiv erstellt: ${archiveFile.get().asFile.absolutePath}"
+        println "   Entpacken Sie das ZIP und führen Sie ${appName}.exe aus dem ${appName}-Ordner aus."
+    }
+}
+
+// Task zum Erstellen eines .msi oder .exe Installers für Windows (benötigt WiX)
+task buildExeWiX(type: Exec) {
+    group = 'distribution'
+    description = 'Erstellt einen .msi Installer für Windows (benötigt WiX Toolset)'
+    
+    dependsOn shadowJar, convertIconToIco
+    
+    executable = 'jpackage'
+    
+    doFirst {
+        // Prüfe ob wir auf Windows sind
+        if (!System.getProperty('os.name').toLowerCase().contains('windows')) {
+            throw new GradleException('buildExeWiX kann nur auf Windows ausgeführt werden.')
+        }
+        
+        // Prüfe ob WiX verfügbar ist
+        try {
+            project.exec {
+                commandLine 'light.exe', '-?'
+                ignoreExitValue = true
+            }
+        } catch (Exception e) {
+            throw new GradleException('WiX Toolset nicht gefunden!\n' +
+                'Bitte installieren Sie WiX 3.0 oder später von https://wixtoolset.org/\n' +
+                'und fügen Sie es zum PATH hinzu.\n' +
+                'Alternativ verwenden Sie "gradlew buildExe" für ein ZIP-Archiv (kein WiX benötigt).\n' +
+                'Das ZIP-Archiv kann einfach entpackt und die .exe direkt ausgeführt werden.')
+        }
+        
+        // Lösche vorherige Builds
+        delete fileTree("${buildDir}/distributions") {
+            include "*.msi"
+            include "*.exe"
+        }
+        
+        def mainJar = shadowJar.archiveFileName.get()
+        def iconArg = iconIco.exists() ? iconIco.absolutePath : iconPng.absolutePath
+        
+        args = [
+            '--input', "${buildDir}/libs",
+            '--name', appName,
+            '--main-jar', mainJar,
+            '--main-class', mainClass,
+            '--app-version', appVersion,
+            '--vendor', vendor,
+            '--dest', "${buildDir}/distributions",
+            '--type', 'msi',
+            '--icon', iconArg,
             '--win-dir-chooser',
             '--win-menu',
             '--win-shortcut',
@@ -185,7 +373,7 @@ task buildExe(type: Exec) {
     }
     
     doLast {
-        println "✅ .exe Installer erstellt in: ${buildDir}/distributions/"
+        println "✅ .msi Installer erstellt in: ${buildDir}/distributions/"
     }
 }
 
@@ -196,7 +384,8 @@ task buildAllInstallers {
     dependsOn buildDmg
     
     doLast {
-        println "⚠️  Hinweis: .exe kann nur auf Windows erstellt werden."
+        println "⚠️  Hinweis: Windows-Installer können nur auf Windows erstellt werden."
         println "   Für Windows-Installer bitte 'gradlew buildExe' auf einem Windows-System ausführen."
+        println "   (Erstellt einen .msi Installer - kein WiX benötigt)"
     }
 }

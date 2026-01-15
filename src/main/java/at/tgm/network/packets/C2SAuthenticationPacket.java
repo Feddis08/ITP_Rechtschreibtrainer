@@ -97,6 +97,10 @@ public class C2SAuthenticationPacket implements RequestPacket {
             
             if (n != null && n.checkPassword(this.password)){
 
+                // Aktualisiere letztes Login-Datum
+                n.setLastLoginTimestamp(System.currentTimeMillis());
+                logger.debug("Letztes Login-Datum aktualisiert für: {}", this.username);
+
                 // Client bleibt derselbe - nur State ändern
                 if (client instanceof ServerClient) {
                     ServerClient serverClient = (ServerClient) client;
