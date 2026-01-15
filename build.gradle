@@ -125,7 +125,7 @@ task convertIconToIcons {
         def sizes = [16, 32, 64, 128, 256, 512, 1024]
         sizes.each { size ->
             def outputFile = file("${iconsetDir}/icon_${size}x${size}.png")
-            exec {
+            project.exec {
                 commandLine 'sips', '-z', size.toString(), size.toString(), iconPng, '--out', outputFile
                 ignoreExitValue = false
             }
@@ -134,7 +134,7 @@ task convertIconToIcons {
             if (size <= 512) {
                 def retinaSize = size * 2
                 def retinaFile = file("${iconsetDir}/icon_${size}x${size}@2x.png")
-                exec {
+                project.exec {
                     commandLine 'sips', '-z', retinaSize.toString(), retinaSize.toString(), iconPng, '--out', retinaFile
                     ignoreExitValue = false
                 }
@@ -142,7 +142,7 @@ task convertIconToIcons {
         }
         
         // Konvertiere iconset zu .icns
-        exec {
+        project.exec {
             commandLine 'iconutil', '-c', 'icns', iconsetDir, '-o', iconIcons
             ignoreExitValue = false
         }
@@ -214,7 +214,7 @@ task convertIconToIco {
         if (os.contains('windows')) {
             // Versuche ImageMagick zu verwenden
             try {
-                exec {
+                project.exec {
                     commandLine 'magick', iconPng, '-define', 'icon:auto-resize=256,128,64,48,32,16', iconIco
                     ignoreExitValue = false
                 }
@@ -231,7 +231,7 @@ task convertIconToIco {
         } else {
             // Auf macOS/Linux: Versuche ImageMagick oder sips zu verwenden
             try {
-                exec {
+                project.exec {
                     commandLine 'magick', iconPng, '-define', 'icon:auto-resize=256,128,64,48,32,16', iconIco
                     ignoreExitValue = false
                 }
@@ -332,7 +332,7 @@ task buildExeWiX(type: Exec) {
         
         // Prüfe ob WiX verfügbar ist
         try {
-            exec {
+            project.exec {
                 commandLine 'light.exe', '-?'
                 ignoreExitValue = true
             }
