@@ -12,6 +12,7 @@ import at.tgm.server.LehrerState;
 import at.tgm.server.SchuelerState;
 import at.tgm.server.ServerSysAdminState;
 import at.tgm.server.ServerClient;
+import at.tgm.server.ServerNetworkController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,6 +90,28 @@ public class C2SAuthenticationPacket implements RequestPacket {
             // Prüfe ob Account deaktiviert ist
             if (n != null && n.isDeactivated()) {
                 logger.warn("Login-Versuch für deaktivierten Account: {} (Request-ID: {})", this.username, requestId);
+                S2CLoginFailedPacket response = new S2CLoginFailedPacket();
+                response.setRequestId(requestId);
+                client.send(response);
+                return;
+            }
+            
+            // Prüfe ob der Benutzer bereits verbunden ist (entweder dieser Client oder ein anderer)
+            // Prüfe zuerst, ob dieser Client bereits mit diesem Username authentifiziert ist
+            if (client instanceof ServerClient serverClient) {
+                at.tgm.objects.Nutzer currentNutzer = serverClient.getNutzer();
+                if (currentNutzer != null && this.username.equals(currentNutzer.getUsername())) {
+                    logger.warn("Client versucht erneut zu authentifizieren mit bereits authentifiziertem Username: {} (Request-ID: {})", this.username, requestId);
+                    S2CLoginFailedPacket response = new S2CLoginFailedPacket();
+                    response.setRequestId(requestId);
+                    client.send(response);
+                    return;
+                }
+            }
+            
+            // Prüfe ob ein anderer Client bereits mit diesem Username verbunden ist
+            if (n != null && ServerNetworkController.isUserAlreadyConnected(this.username, client)) {
+                logger.warn("Login-Versuch für bereits verbundenen Benutzer: {} (Request-ID: {})", this.username, requestId);
                 S2CLoginFailedPacket response = new S2CLoginFailedPacket();
                 response.setRequestId(requestId);
                 client.send(response);
