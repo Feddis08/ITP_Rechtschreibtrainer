@@ -208,42 +208,31 @@ task convertIconToIco {
             throw new GradleException("Icon nicht gefunden: ${iconPng}")
         }
         
-        // Auf Windows: Verwende magick (ImageMagick) oder andere Tools
-        // Falls nicht verfügbar, verwende PNG direkt (jpackage kann es manchmal akzeptieren)
-        def os = System.getProperty('os.name').toLowerCase()
-        if (os.contains('windows')) {
-            // Versuche ImageMagick zu verwenden
-            try {
-                project.exec {
-                    commandLine 'magick', iconPng, '-define', 'icon:auto-resize=256,128,64,48,32,16', iconIco
-                    ignoreExitValue = false
-                }
-            } catch (Exception e) {
-                // Falls ImageMagick nicht verfügbar, kopiere PNG als Fallback
-                // jpackage kann PNG manchmal akzeptieren
-                copy {
-                    from iconPng
-                    into iconIco.parentFile
-                    rename { 'icon.ico' }
-                }
-                println "⚠️  ImageMagick nicht gefunden. Verwende PNG als Fallback."
+        // Stelle sicher, dass das Ausgabeverzeichnis existiert
+        iconIco.parentFile.mkdirs()
+        
+        // Versuche ImageMagick zu verwenden (funktioniert auf Windows, macOS und Linux)
+        def conversionSuccess = false
+        try {
+            def result = project.exec {
+                commandLine 'magick', iconPng, '-define', 'icon:auto-resize=256,128,64,48,32,16', iconIco
+                ignoreExitValue = true
             }
-        } else {
-            // Auf macOS/Linux: Versuche ImageMagick oder sips zu verwenden
-            try {
-                project.exec {
-                    commandLine 'magick', iconPng, '-define', 'icon:auto-resize=256,128,64,48,32,16', iconIco
-                    ignoreExitValue = false
-                }
-            } catch (Exception e) {
-                // Fallback: Kopiere PNG (für Cross-Compilation)
-                copy {
-                    from iconPng
-                    into iconIco.parentFile
-                    rename { 'icon.ico' }
-                }
-                println "⚠️  ImageMagick nicht gefunden. Verwende PNG als Fallback."
+            if (result.exitValue == 0) {
+                conversionSuccess = true
             }
+        } catch (Exception e) {
+            // ImageMagick nicht verfügbar oder Fehler beim Ausführen
+        }
+        
+        if (!conversionSuccess) {
+            // Warnung: Ohne ImageMagick können wir kein echtes ICO erstellen
+            // jpackage auf Windows benötigt ein echtes ICO-Format
+            println "⚠️  WARNUNG: ImageMagick nicht gefunden oder Konvertierung fehlgeschlagen!"
+            println "   Bitte installieren Sie ImageMagick von https://imagemagick.org/"
+            println "   oder verwenden Sie ein bereits vorhandenes .ico Icon."
+            println "   jpackage wird ohne Icon fortfahren (oder mit PNG, falls unterstützt)."
+            // Keine Datei erstellen - die Build-Tasks werden dann ohne Icon-Argument fortfahren
         }
     }
     
@@ -271,9 +260,9 @@ task buildExeAppImage(type: Exec) {
         }
         
         def mainJar = shadowJar.archiveFileName.get()
-        def iconArg = iconIco.exists() ? iconIco.absolutePath : iconPng.absolutePath
         
-        args = [
+        // Nur Icon verwenden, wenn es existiert und nicht leer ist (echtes ICO)
+        def argsList = [
             '--input', "${buildDir}/libs",
             '--name', appName,
             '--main-jar', mainJar,
@@ -282,11 +271,21 @@ task buildExeAppImage(type: Exec) {
             '--vendor', vendor,
             '--dest', "${buildDir}/distributions",
             '--type', 'app-image',
-            '--icon', iconArg,
             '--java-options', '--add-opens=java.base/java.lang=ALL-UNNAMED',
             '--java-options', '--add-opens=java.base/java.util=ALL-UNNAMED',
             '--arguments', 'client'
         ]
+        
+        // Füge Icon nur hinzu, wenn es ein gültiges ICO ist (nicht leer)
+        if (iconIco.exists() && iconIco.length() > 0) {
+            argsList.addAll(['--icon', iconIco.absolutePath])
+        } else if (iconPng.exists()) {
+            // Fallback: Versuche PNG (jpackage kann es manchmal akzeptieren)
+            println "⚠️  Verwende PNG als Icon (ICO-Konvertierung fehlgeschlagen)"
+            argsList.addAll(['--icon', iconPng.absolutePath])
+        }
+        
+        args = argsList
     }
     
     doLast {
@@ -351,9 +350,9 @@ task buildExeWiX(type: Exec) {
         }
         
         def mainJar = shadowJar.archiveFileName.get()
-        def iconArg = iconIco.exists() ? iconIco.absolutePath : iconPng.absolutePath
         
-        args = [
+        // Nur Icon verwenden, wenn es existiert und nicht leer ist (echtes ICO)
+        def argsList = [
             '--input', "${buildDir}/libs",
             '--name', appName,
             '--main-jar', mainJar,
@@ -362,7 +361,6 @@ task buildExeWiX(type: Exec) {
             '--vendor', vendor,
             '--dest', "${buildDir}/distributions",
             '--type', 'msi',
-            '--icon', iconArg,
             '--win-dir-chooser',
             '--win-menu',
             '--win-shortcut',
@@ -370,6 +368,17 @@ task buildExeWiX(type: Exec) {
             '--java-options', '--add-opens=java.base/java.util=ALL-UNNAMED',
             '--arguments', 'client'
         ]
+        
+        // Füge Icon nur hinzu, wenn es ein gültiges ICO ist (nicht leer)
+        if (iconIco.exists() && iconIco.length() > 0) {
+            argsList.addAll(['--icon', iconIco.absolutePath])
+        } else if (iconPng.exists()) {
+            // Fallback: Versuche PNG (jpackage kann es manchmal akzeptieren)
+            println "⚠️  Verwende PNG als Icon (ICO-Konvertierung fehlgeschlagen)"
+            argsList.addAll(['--icon', iconPng.absolutePath])
+        }
+        
+        args = argsList
     }
     
     doLast {
