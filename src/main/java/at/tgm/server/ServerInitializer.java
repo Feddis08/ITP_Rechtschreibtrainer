@@ -20,7 +20,7 @@ public class ServerInitializer {
 
     /**
      * Initialisiert alle Server-Datenstrukturen mit initialen Werten.
-     * Diese Methode erstellt und konfiguriert alle Standard-Nutzer.
+     * Lädt zuerst Daten aus der Datenbank, erstellt nur neue, wenn keine vorhanden sind.
      */
     public static void initialize() {
         logger.info("Initialisiere Server-Datenstrukturen...");
@@ -34,9 +34,9 @@ public class ServerInitializer {
         initializeLehrer();
         initializeSysAdmin();
 
-        // Erstelle initiale Lernkarten und Quiz-Templates
-        initializeFachbegriffe();
-        initializeQuizTemplates();
+        // Lade oder erstelle Lernkarten und Quiz-Templates
+        loadOrInitializeFachbegriffe();
+        loadOrInitializeQuizTemplates();
 
         logger.info("Server-Initialisierung abgeschlossen. {} Nutzer wurden erstellt.", Server.nutzers.length);
     }
@@ -109,6 +109,71 @@ public class ServerInitializer {
     }
 
     /**
+     * Lädt Fachbegriffe aus der Datenbank oder erstellt initiale, falls keine vorhanden sind.
+     */
+    private static void loadOrInitializeFachbegriffe() {
+        logger.info("Lade Lernkarten aus Datenbank...");
+        
+        try {
+            // Versuche, alle Fachbegriffe aus der Datenbank zu laden
+            FachbegriffItem[] loadedItems = FachbegriffItem.loadAll();
+            
+            if (loadedItems != null && loadedItems.length > 0) {
+                // Datenbank enthält bereits Fachbegriffe - lade sie
+                logger.info("✅ {} Lernkarten aus Datenbank geladen", loadedItems.length);
+                for (FachbegriffItem item : loadedItems) {
+                    // Füge zu Server-Array hinzu (ohne erneutes Speichern in DB)
+                    if (item != null) {
+                        // Direktes Hinzufügen zum Array, ohne save() aufzurufen
+                        addFachbegriffToArray(item);
+                    }
+                }
+                logger.info("✅ {} Lernkarten erfolgreich in Server-Array geladen", Server.fachbegriffe.length);
+            } else {
+                // Keine Daten in DB - erstelle initiale Fachbegriffe
+                logger.info("Keine Lernkarten in Datenbank gefunden, erstelle initiale Lernkarten...");
+                initializeFachbegriffe();
+            }
+        } catch (Exception e) {
+            logger.error("Fehler beim Laden der Lernkarten aus Datenbank: {}", e.getMessage(), e);
+            logger.warn("Erstelle stattdessen initiale Lernkarten...");
+            initializeFachbegriffe();
+        }
+    }
+
+    /**
+     * Fügt einen Fachbegriff direkt zum Server-Array hinzu, ohne ihn erneut in der DB zu speichern.
+     * Prüft, ob das Item bereits im Array ist (anhand der ID), um Duplikate zu vermeiden.
+     */
+    private static void addFachbegriffToArray(FachbegriffItem item) {
+        if (item == null) {
+            return;
+        }
+
+        // Prüfe, ob das Item bereits im Array ist (anhand der ID)
+        for (FachbegriffItem existing : Server.fachbegriffe) {
+            if (existing != null && existing.getId() == item.getId()) {
+                logger.debug("FachbegriffItem '{}' (ID: {}) ist bereits im Array, überspringe", item.getWord(), item.getId());
+                return;
+            }
+        }
+
+        // Suche nach freiem Platz im Array
+        for (int i = 0; i < Server.fachbegriffe.length; i++) {
+            if (Server.fachbegriffe[i] == null) {
+                Server.fachbegriffe[i] = item;
+                return;
+            }
+        }
+
+        // Kein freier Platz gefunden - Array vergrößern
+        FachbegriffItem[] neu = new FachbegriffItem[Server.fachbegriffe.length + 1];
+        System.arraycopy(Server.fachbegriffe, 0, neu, 0, Server.fachbegriffe.length);
+        neu[Server.fachbegriffe.length] = item;
+        Server.fachbegriffe = neu;
+    }
+
+    /**
      * Erstellt und konfiguriert 10 initiale Lernkarten (Fachbegriffe).
      */
     private static void initializeFachbegriffe() {
@@ -165,6 +230,139 @@ public class ServerInitializer {
         logger.debug("Lernkarte '{}' hinzugefügt", datenbank.getWord());
 
         logger.info("{} Lernkarten wurden initialisiert", Server.fachbegriffe.length);
+    }
+
+    /**
+     * Lädt Quiz-Templates aus der Datenbank oder erstellt initiale, falls keine vorhanden sind.
+     */
+    private static void loadOrInitializeQuizTemplates() {
+        logger.info("Lade Quiz-Templates aus Datenbank...");
+        
+        try {
+            // Versuche, Quiz-Templates aus der Datenbank zu laden
+            Quiz[] loadedTemplates = loadQuizTemplatesFromDatabase();
+            
+            if (loadedTemplates != null && loadedTemplates.length > 0) {
+                // Datenbank enthält bereits Quiz-Templates - lade sie
+                logger.info("✅ {} Quiz-Templates aus Datenbank geladen", loadedTemplates.length);
+                for (Quiz template : loadedTemplates) {
+                    if (template != null) {
+                        // Direktes Hinzufügen zum Array, ohne erneutes Speichern
+                        addQuizTemplateToArray(template);
+                    }
+                }
+                logger.info("✅ {} Quiz-Templates erfolgreich in Server-Array geladen", Server.quizTemplates.length);
+            } else {
+                // Keine Daten in DB - erstelle initiale Quiz-Templates
+                logger.info("Keine Quiz-Templates in Datenbank gefunden, erstelle initiale Templates...");
+                initializeQuizTemplates();
+            }
+        } catch (Exception e) {
+            logger.error("Fehler beim Laden der Quiz-Templates aus Datenbank: {}", e.getMessage(), e);
+            logger.warn("Erstelle stattdessen initiale Quiz-Templates...");
+            initializeQuizTemplates();
+        }
+    }
+
+    /**
+     * Lädt alle Quiz-Templates aus der Datenbank.
+     */
+    private static Quiz[] loadQuizTemplatesFromDatabase() throws java.sql.SQLException {
+        java.sql.Connection conn = at.tgm.server.DatabaseManager.getConnection();
+        try {
+            // Lade Quiz-Templates
+            String sql = "SELECT * FROM quiz_template ORDER BY id";
+            java.util.List<Quiz> templates = new java.util.ArrayList<>();
+            
+            try (java.sql.PreparedStatement stmt = conn.prepareStatement(sql);
+                 java.sql.ResultSet rs = stmt.executeQuery()) {
+                
+                while (rs.next()) {
+                    long templateId = rs.getLong("id");
+                    String name = rs.getString("name");
+                    
+                    // Lade Items für dieses Template
+                    FachbegriffItem[] items = loadQuizTemplateItems(conn, templateId);
+                    
+                    Quiz template = new Quiz(name, items);
+                    template.setId(templateId);
+                    templates.add(template);
+                }
+            }
+            
+            return templates.toArray(new Quiz[0]);
+        } finally {
+            at.tgm.server.DatabaseManager.returnConnection(conn);
+        }
+    }
+
+    /**
+     * Lädt die FachbegriffItems für ein Quiz-Template.
+     * Verwendet die bereits geladenen Fachbegriffe aus Server.fachbegriffe, falls vorhanden.
+     */
+    private static FachbegriffItem[] loadQuizTemplateItems(java.sql.Connection conn, long templateId) throws java.sql.SQLException {
+        String sql = """
+            SELECT f.id, f.word, f.level, f.points, f.max_points, f.phrase
+            FROM quiz_template_items qti
+            JOIN fachbegriff_item f ON qti.fachbegriff_item_id = f.id
+            WHERE qti.quiz_template_id = ?
+            ORDER BY qti.position
+            """;
+        
+        java.util.List<FachbegriffItem> items = new java.util.ArrayList<>();
+        
+        try (java.sql.PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, templateId);
+            
+            try (java.sql.ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    long itemId = rs.getLong("id");
+                    
+                    // Versuche zuerst, das Item aus Server.fachbegriffe zu finden
+                    FachbegriffItem item = Server.findFachbegriffById(itemId);
+                    
+                    if (item == null) {
+                        // Item nicht im Server-Array gefunden - erstelle neues (sollte nicht passieren)
+                        logger.warn("FachbegriffItem mit ID {} nicht in Server.fachbegriffe gefunden, erstelle neues", itemId);
+                        item = new FachbegriffItem(
+                            itemId,
+                            rs.getString("word"),
+                            rs.getInt("level"),
+                            rs.getInt("points"),
+                            rs.getInt("max_points"),
+                            rs.getString("phrase")
+                        );
+                    }
+                    
+                    items.add(item);
+                }
+            }
+        }
+        
+        return items.toArray(new FachbegriffItem[0]);
+    }
+
+    /**
+     * Fügt ein Quiz-Template direkt zum Server-Array hinzu, ohne es erneut in der DB zu speichern.
+     */
+    private static void addQuizTemplateToArray(Quiz quiz) {
+        if (quiz == null) {
+            return;
+        }
+
+        // Suche nach freiem Platz im Array
+        for (int i = 0; i < Server.quizTemplates.length; i++) {
+            if (Server.quizTemplates[i] == null) {
+                Server.quizTemplates[i] = quiz;
+                return;
+            }
+        }
+
+        // Kein freier Platz gefunden - Array vergrößern
+        Quiz[] neu = new Quiz[Server.quizTemplates.length + 1];
+        System.arraycopy(Server.quizTemplates, 0, neu, 0, Server.quizTemplates.length);
+        neu[Server.quizTemplates.length] = quiz;
+        Server.quizTemplates = neu;
     }
 
     /**
