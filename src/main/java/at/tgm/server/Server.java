@@ -111,15 +111,14 @@ public class Server {
      * Speichert einen Nutzer in die Datenbank, falls DatabaseManager initialisiert ist.
      */
     private static void saveNutzerToDatabase(Nutzer nutzer) {
+        if (nutzer == null) {
+            logger.warn("Versuch, null-Nutzer zu speichern");
+            return;
+        }
         logger.info("saveNutzerToDatabase aufgerufen für Nutzer '{}'", nutzer.getUsername());
         
         if (!DatabaseManager.getInstance().isInitialized()) {
             logger.warn("DatabaseManager nicht initialisiert - kann Nutzer '{}' nicht speichern", nutzer.getUsername());
-            return;
-        }
-        
-        if (nutzer == null) {
-            logger.warn("Versuch, null-Nutzer zu speichern");
             return;
         }
         
@@ -162,7 +161,8 @@ public class Server {
                     stmt.setLong(1, nutzerId);
                     stmt.setString(2, nutzer.getUuid() != null ? nutzer.getUuid() : java.util.UUID.randomUUID().toString());
                     stmt.setString(3, nutzer.getUsername());
-                    stmt.setString(4, nutzer.getPassword());
+                    // Verwende getPasswordHash() statt getPassword() für bessere Klarheit
+                    stmt.setString(4, nutzer.getPasswordHash());
                     stmt.setString(5, nutzerType);
                     stmt.setString(6, nutzer.getFirstName());
                     stmt.setString(7, nutzer.getLastName());
@@ -273,7 +273,10 @@ public class Server {
             }
         }
         nutzers = nutzersNeu;
-        logger.info("Nutzer '{}' erfolgreich entfernt", nutzer.getUsername());
+        logger.info("Nutzer '{}' erfolgreich aus Server-Array entfernt", nutzer.getUsername());
+
+        // Lösche aus Datenbank
+        deleteNutzerFromDatabase(nutzer.getUsername());
     }
 
     // ======================================================
@@ -877,6 +880,67 @@ public class Server {
             }
         }
     }
+
+    /**
+     * Hilfsmethode: Holt die Nutzer-ID anhand des Usernames aus der Datenbank.
+     */
+    private static Long getNutzerIdFromDatabase(Connection conn, String username) throws SQLException {
+        String sql = """
+            SELECT id FROM nutzer WHERE username = ? LIMIT 1
+            """;
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, username);
+            try (java.sql.ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getLong("id");
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Löscht einen Nutzer (und abhängige Daten) aus der Datenbank.
+     */
+    private static void deleteNutzerFromDatabase(String username) {
+        logger.info("deleteNutzerFromDatabase aufgerufen für Username: {}", username);
+
+        if (!DatabaseManager.getInstance().isInitialized()) {
+            logger.warn("DatabaseManager nicht initialisiert - kann Nutzer '{}' nicht aus DB löschen", username);
+            return;
+        }
+
+        try {
+            Connection conn = DatabaseManager.getConnection();
+            try {
+                conn.setAutoCommit(false);
+
+                Long nutzerId = getNutzerIdFromDatabase(conn, username);
+                if (nutzerId == null) {
+                    logger.warn("Nutzer '{}' nicht in DB gefunden - nichts zu löschen", username);
+                    conn.rollback();
+                    return;
+                }
+
+                String sql = "DELETE FROM nutzer WHERE id = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    stmt.setLong(1, nutzerId);
+                    int deleted = stmt.executeUpdate();
+                    logger.info("{} Nutzer mit Username '{}' aus DB gelöscht", deleted, username);
+                }
+
+                conn.commit();
+                logger.info("✅ Nutzer '{}' und abhängige Daten aus DB gelöscht", username);
+            } catch (SQLException e) {
+                conn.rollback();
+                logger.error("❌ SQLException beim Löschen von Nutzer '{}': {}", username, e.getMessage(), e);
+            } finally {
+                DatabaseManager.returnConnection(conn);
+            }
+        } catch (Exception e) {
+            logger.error("❌ Fehler beim Löschen von Nutzer '{}': {}", username, e.getMessage(), e);
+        }
+    }
     
     /**
      * Hilfsmethode: Findet Quiz-Template-ID anhand des Namens.
@@ -898,8 +962,6 @@ public class Server {
      * Lädt Quiz-Ergebnisse für einen Schüler aus der Datenbank.
      */
     public static Quiz[] loadQuizAttemptsForSchueler(at.tgm.objects.Schueler schueler) {
-        logger.info("loadQuizAttemptsForSchueler aufgerufen für Schüler '{}'", schueler.getUsername());
-        
         if (!DatabaseManager.getInstance().isInitialized()) {
             logger.warn("DatabaseManager nicht initialisiert - kann Quiz-Ergebnisse nicht laden");
             return new Quiz[0];
@@ -909,6 +971,7 @@ public class Server {
             logger.warn("Versuch, Quiz-Ergebnisse für null-Schüler zu laden");
             return new Quiz[0];
         }
+        logger.info("loadQuizAttemptsForSchueler aufgerufen für Schüler '{}'", schueler.getUsername());
         
         java.util.List<Quiz> quizzes = new java.util.ArrayList<>();
         

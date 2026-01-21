@@ -25,20 +25,101 @@ public class ServerInitializer {
     public static void initialize() {
         logger.info("Initialisiere Server-Datenstrukturen...");
 
-        // Initialisiere Nutzer-Array
-        Server.nutzers = new Nutzer[1];
-        logger.debug("Nutzer-Array initialisiert");
+        // Lade Nutzer aus DB oder erzeuge Default-Daten, falls DB leer ist
+        Nutzer[] loadedUsers = loadNutzerFromDatabase();
+        if (loadedUsers != null && loadedUsers.length > 0) {
+            Server.nutzers = loadedUsers;
+            logger.info("✅ {} Nutzer aus Datenbank geladen", loadedUsers.length);
+        } else {
+            // Initialisiere Nutzer-Array
+            Server.nutzers = new Nutzer[1];
+            logger.debug("Nutzer-Array initialisiert (leer), erstelle Default-Nutzer...");
 
-        // Erstelle und konfiguriere initiale Nutzer
-        initializeSchueler();
-        initializeLehrer();
-        initializeSysAdmin();
+            // Erstelle und konfiguriere initiale Nutzer
+            initializeSchueler();
+            initializeLehrer();
+            initializeSysAdmin();
+        }
 
         // Lade oder erstelle Lernkarten und Quiz-Templates
         loadOrInitializeFachbegriffe();
         loadOrInitializeQuizTemplates();
 
         logger.info("Server-Initialisierung abgeschlossen. {} Nutzer wurden erstellt.", Server.nutzers.length);
+    }
+
+    /**
+     * Lädt alle Nutzer aus der Datenbank. Gibt null/leer zurück, wenn keine vorhanden oder DB nicht initialisiert.
+     */
+    private static Nutzer[] loadNutzerFromDatabase() {
+        if (!DatabaseManager.getInstance().isInitialized()) {
+            logger.warn("DatabaseManager nicht initialisiert - kann Nutzer nicht laden");
+            return new Nutzer[0];
+        }
+
+        java.util.List<Nutzer> users = new java.util.ArrayList<>();
+
+        try {
+            java.sql.Connection conn = DatabaseManager.getConnection();
+            try {
+                String sql = """
+                    SELECT n.id, n.username, n.password, n.type, n.first_name, n.last_name, n.email,
+                           n.phone_number, n.age, n.display_name, n.beschreibung, n.status,
+                           n.profile_picture_url, n.created_at, n.last_login_timestamp, n.is_deactivated,
+                           s.school_class,
+                           (l.nutzer_id IS NOT NULL) AS is_lehrer,
+                           (sa.nutzer_id IS NOT NULL) AS is_sysadmin
+                    FROM nutzer n
+                    LEFT JOIN schueler s ON n.id = s.nutzer_id
+                    LEFT JOIN lehrer l ON n.id = l.nutzer_id
+                    LEFT JOIN sysadmin sa ON n.id = sa.nutzer_id
+                    """;
+
+                try (java.sql.PreparedStatement stmt = conn.prepareStatement(sql);
+                     java.sql.ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        String type = rs.getString("type");
+                        String username = rs.getString("username");
+                        String passwordHash = rs.getString("password"); // In DB ist bereits Hash gespeichert
+                        Nutzer nutzer;
+                        if ("LEHRER".equalsIgnoreCase(type)) {
+                            nutzer = new Lehrer(username, passwordHash, true); // true = aus DB geladen
+                        } else if ("SYSADMIN".equalsIgnoreCase(type)) {
+                            nutzer = new SysAdmin(username, passwordHash, true); // true = aus DB geladen
+                        } else {
+                            // Default: Schüler
+                            Schueler sch = new Schueler(username, passwordHash, true); // true = aus DB geladen
+                            sch.setSchoolClass(rs.getString("school_class"));
+                            nutzer = sch;
+                        }
+
+                        nutzer.setFirstName(rs.getString("first_name"));
+                        nutzer.setLastName(rs.getString("last_name"));
+                        nutzer.setEmail(rs.getString("email"));
+                        nutzer.setPhoneNumber(rs.getString("phone_number"));
+                        nutzer.setAge(rs.getInt("age"));
+                        nutzer.setDisplayName(rs.getString("display_name"));
+                        nutzer.setBeschreibung(rs.getString("beschreibung"));
+                        nutzer.setProfilePictureUrl(rs.getString("profile_picture_url"));
+                        try {
+                            nutzer.setStatus(rs.getString("status") != null ? at.tgm.objects.NutzerStatus.valueOf(rs.getString("status")) : at.tgm.objects.NutzerStatus.OFFLINE);
+                        } catch (IllegalArgumentException e) {
+                            nutzer.setStatus(at.tgm.objects.NutzerStatus.OFFLINE);
+                        }
+                        nutzer.setLastLoginTimestamp(rs.getLong("last_login_timestamp"));
+                        nutzer.setDeactivated(rs.getBoolean("is_deactivated"));
+
+                        users.add(nutzer);
+                    }
+                }
+            } finally {
+                DatabaseManager.returnConnection(conn);
+            }
+        } catch (Exception e) {
+            logger.error("Fehler beim Laden der Nutzer aus DB: {}", e.getMessage(), e);
+        }
+
+        return users.toArray(new Nutzer[0]);
     }
 
     /**

@@ -7,4 +7,14 @@ public class Lehrer extends Nutzer{
     public Lehrer(String username, String password) {
         super(username, password);
     }
+    
+    /**
+     * Konstruktor für das Laden aus der Datenbank mit bereits gehashtem Passwort.
+     * @param username Der Benutzername
+     * @param passwordHash Das bereits gehashte Passwort
+     * @param fromDatabase Flag, ob dies aus der DB geladen wurde
+     */
+    public Lehrer(String username, String passwordHash, boolean fromDatabase) {
+        super(username, passwordHash, fromDatabase);
+    }
 }
