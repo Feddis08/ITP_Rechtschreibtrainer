@@ -124,7 +124,6 @@ public class ServerDiscoveryLauncher {
                 }
             }
             
-            // Wenn keine Broadcast-Adressen gefunden, verwende 255.255.255.255
             if (broadcastAddresses.isEmpty()) {
                 broadcastAddresses.add(InetAddress.getByName("255.255.255.255"));
                 logger.debug("Verwende Standard-Broadcast-Adresse: 255.255.255.255");

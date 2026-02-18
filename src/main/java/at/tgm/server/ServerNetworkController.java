@@ -112,6 +112,46 @@ public class ServerNetworkController {
         logger.debug("Client erfolgreich hinzugefügt (Array vergrößert)");
     }
 
+    /**
+     * Prüft, ob ein Benutzer mit dem gegebenen Username bereits verbunden und authentifiziert ist.
+     * 
+     * @param username Der zu prüfende Username
+     * @param excludeClient Optional: Client, der von der Prüfung ausgeschlossen werden soll (z.B. der aktuelle Client)
+     * @return true wenn ein anderer Client mit diesem Username bereits verbunden ist, false sonst
+     */
+    public static boolean isUserAlreadyConnected(String username, SocketClient excludeClient) {
+        if (username == null || username.isEmpty()) {
+            return false;
+        }
+
+        for (SocketClient c : clients) {
+            if (c == null) continue;
+            
+            // Überspringe den ausgeschlossenen Client
+            if (excludeClient != null && c.equals(excludeClient)) {
+                continue;
+            }
+
+            // Prüfe ob der Client authentifiziert ist und den gleichen Username hat
+            if (c instanceof ServerClient serverClient) {
+                at.tgm.objects.Nutzer nutzer = serverClient.getNutzer();
+                if (nutzer != null && username.equals(nutzer.getUsername())) {
+                    // Prüfe auch ob der Socket noch offen ist
+                    try {
+                        if (!c.getSocket().isClosed()) {
+                            logger.debug("Benutzer '{}' ist bereits verbunden", username);
+                            return true;
+                        }
+                    } catch (Exception e) {
+                        logger.debug("Fehler beim Prüfen des Socket-Status für Client", e);
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
 
 
 

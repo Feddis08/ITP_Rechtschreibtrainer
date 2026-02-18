@@ -41,6 +41,16 @@ public class TestServerManager {
         // Initialize NetworkSystem
         at.tgm.network.core.NetworkSystem.init();
         
+        // Initialize database (important for persistence tests)
+        logger.info("Initialisiere Datenbank für Tests...");
+        try {
+            at.tgm.server.DatabaseManager.getInstance().initialize();
+            at.tgm.server.DatabaseSchema.createTables();
+            logger.info("✓ Datenbank erfolgreich initialisiert");
+        } catch (Exception e) {
+            logger.warn("Fehler beim Initialisieren der Datenbank (Tests können trotzdem laufen): {}", e.getMessage());
+        }
+        
         // Initialize test users (similar to Server.main())
         Server.nutzers = new Nutzer[1];
         

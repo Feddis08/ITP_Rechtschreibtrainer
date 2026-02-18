@@ -43,15 +43,17 @@ public class SchuelerState implements ClientState {
             // Erstes Quiz überhaupt
             s.setQuizzes(new Quiz[]{q});
             logger.info("Erstes Quiz für Schüler '{}' hinzugefügt", s.getUsername());
-            return;
+        } else {
+            Quiz[] newArr = new Quiz[quizzes.length + 1];
+            System.arraycopy(quizzes, 0, newArr, 0, quizzes.length);
+            newArr[quizzes.length] = q;
+            s.setQuizzes(newArr);
+            logger.info("Quiz für Schüler '{}' hinzugefügt (Gesamt: {})", s.getUsername(), newArr.length);
         }
-
-        Quiz[] newArr = new Quiz[quizzes.length + 1];
-        System.arraycopy(quizzes, 0, newArr, 0, quizzes.length);
-        newArr[quizzes.length] = q;
-
-        s.setQuizzes(newArr);
-        logger.info("Quiz für Schüler '{}' hinzugefügt (Gesamt: {})", s.getUsername(), newArr.length);
+        
+        // WICHTIG: Speichere Quiz-Ergebnis in Datenbank
+        logger.info("Speichere Quiz-Ergebnis für Schüler '{}' in Datenbank", s.getUsername());
+        Server.saveQuizAttemptToDatabase(s, q);
     }
 
     /**
@@ -231,6 +233,7 @@ public class SchuelerState implements ClientState {
 
     /**
      * Sendet alle bisherigen Quizzes des Schülers.
+     * Lädt Quiz-Ergebnisse aus der Datenbank, falls noch nicht im Speicher.
      */
     @Override
     public void postStats(ServerClient client, long requestId) {
@@ -240,6 +243,16 @@ public class SchuelerState implements ClientState {
 
         Schueler s = (Schueler) client.getNutzer();
         Quiz[] quizzes = s.getQuizzes();
+
+        // WICHTIG: Lade Quiz-Ergebnisse aus Datenbank, falls noch nicht geladen
+        if (quizzes == null || quizzes.length == 0) {
+            logger.info("Lade Quiz-Ergebnisse für Schüler '{}' aus Datenbank...", s.getUsername());
+            quizzes = Server.loadQuizAttemptsForSchueler(s);
+            if (quizzes != null && quizzes.length > 0) {
+                s.setQuizzes(quizzes);
+                logger.info("✅ {} Quiz-Ergebnisse für Schüler '{}' aus Datenbank geladen", quizzes.length, s.getUsername());
+            }
+        }
 
         if (quizzes == null)
             quizzes = new Quiz[0];
