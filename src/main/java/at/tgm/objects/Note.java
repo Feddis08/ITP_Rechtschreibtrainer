@@ -54,6 +54,6 @@ public class Note extends SendableObject {
 
     @Override
     public String toString() {
-        return notenwert != null ? notenwert.getDisplayName() : "Keine Note";
+        return notenwert != null ? notenwert.getDisplayName() : "Nicht benotet";
     }
 }

@@ -149,7 +149,7 @@ public class FachbegriffItem extends SavableObject{
             int rowsAffected = stmt.executeUpdate();
             
             if (rowsAffected == 0) {
-                logger.warn("FachbegriffItem mit ID {} nicht gefunden zum Löschen", this.id);
+                logger.warn("FachbegriffItem mit ID {} nicht zum Löschen gefunden.", this.id);
             } else {
                 logger.debug("FachbegriffItem '{}' (ID: {}) gelöscht", this.word, this.id);
             }
